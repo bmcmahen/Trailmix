@@ -1,0 +1,34 @@
+
+<head>
+  <title> Trailmix : Hiking the World </title>
+</head>
+<body>
+  <div class='navbar navbar-fixed-top'>
+    <div class='navbar-inner'>
+      <div class='container-fluid'>
+        <a class='brand' href='#'>trailmix</a>
+        <ul class='nav pull-right'>
+         {{> navLinks}}
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class='container-fluid'>
+    <div class='row-fluid'>
+      <div class='span4'>
+        {{> sideBar }}
+      </div>
+      <div class='span8'>
+        {{> mapView }}
+      </div>
+    </div>
+  </div>
+</body>
+
+<template name='navLinks'>
+  {{#if currentUser}}
+    <li> <a href='#'>My Trails</a> </li>
+    <li> <a href='#'>Create Trail</a> </li>
+  {{/if}}
+    <li> {{loginButtons align='right'}} </li>
+</template>
