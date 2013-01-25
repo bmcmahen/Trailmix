@@ -5,6 +5,7 @@
    * @param {[type]}   gpxString [xml gpx string]
    * @param {Function} callback  [return with json]
    */
+  
   var GPXtoGeoJSON = function(gpxString, callback){
 
     // Ensure that we have a string
@@ -45,10 +46,12 @@
 
       var attr = tag.attributes;
       if (attr && attr.lat && attr.lon && feature) {
-        feature.geometry.coordinates.push([ attr.lat, attr.lon]);
 
-        if (featureName === 'wpt')
-          _.flatten(feature.geometry.coordinates);
+        feature.geometry.coordinates.push([ +attr.lat, +attr.lon]);
+
+        if (featureName === 'wpt') {
+          feature.geometry.coordinates = feature.geometry.coordinates[0];
+        }
 
       }
 
@@ -72,10 +75,10 @@
         // For now, I'll have a fail-safe, so if it's over 10000 points (which should be
         // ver unusual) I'll run simplification functions. 
         if (featureName === 'trk' && feature.geometry.coordinates.length > 10000) {
-          var coords = feature.geometry.coordinates
-          , result = simplify(coords, 1);
+          // var coords = feature.geometry.coordinates
+          // , result = simplify(coords, 1);
 
-          feature.geometry.coordinates = result; 
+          // feature.geometry.coordinates = result; 
         }
 
         features.push(feature);
@@ -117,37 +120,140 @@
   }
 
 
+  var drawFeatures = function(json){
+
+
+    var features = [];
+
+    var icon = L.icon({
+      iconUrl: '/map_icons/marker-icon.png',
+      shadowUrl: '/map_icons/marker-shadow.png',
+      iconAnchor: [10, 40],
+      popupAnchor: [0, -40]
+    });
+
+    _.each(json, function(feature, i){
+
+      if (feature.geometry.type === 'Point') {
+
+        features.push(L.circleMarker(feature.geometry.coordinates)
+          .bindPopup(feature.properties.name));
+
+      } else if (feature.geometry.type === 'LineString') {
+
+        var pl = L.polyline(feature.geometry.coordinates, {
+          color: 'blue'
+        });
+        features.push(pl);
+
+      }
+
+    });
+
+    var featureGroup = L.featureGroup(features).addTo(Trailmix.map);
+    Trailmix.map.fitBounds(featureGroup.getBounds());
+
+  }
+
+
+  // Take an array of features, and insert them into the database
+  // with the currentTrail _id as the trail attribute. This should
+  // update our trail automatically. 
+  var createFeatures = function(json){
+    _.each(json, function(feature, i){
+      _.extend(feature, {trail : Session.get('currentTrail')});
+      Features.insert(feature);
+    });
+  }
+
+  // XXX - To have interaction between leaflet and dom, I'll need
+  // to create a hash of id : marker/polyline. 
+  // 
+  // To remember an id you can do something like:
+
+  // var m = new L.Marker(...);
+  // m._myId = 12345;
+  // Then grab that out in the callback:
+
+  // map.on('popupopen', function (e) {
+  //     alert(e.popup._source._myId);
+  // });
+
+  // The other way:
+  // 
+  // 
+  // Map id to Object
+  // 
+  // _id : marker,
+  // _id: polyline
+  // 
+  // Map.removeLayer(obj[_id]);
+  // 
+
+  Template.sideBar.rendered = function(){
+
+    // Meteor doesn't handle universal events very well,
+    // so we handle them here. 
+
+    $(window).on('dragover', function(e){
+      e.preventDefault(); 
+      $('#features').addClass('dragover');
+    });
+
+    $(window).on('dragleave', function(e){
+      $('#features').removeClass('dragover');
+    });
+
+    $(window).on('drop', function(e){
+      e.preventDefault();
+    });
+
+  };
+
+  Template.sideBar.destroyed = function(){
+    $(window).off('dragover, dragleave, drop');
+
+  }
 
   Template.sideBar.events({
 
-    'submit #add-trail-form' : function(e, t) {
-      var name = t.find('#add-trail-name').value
-        , files = t.find('#add-trail-file').files;
+    'dragover #features' : function(e, t) {
+      e.preventDefault(); 
+      $(e.currentTarget).addClass('dragover');
+    },
 
-      // Read files using the FileReader, and convert
-      // it to a String. Send that string to be parsed.
-      // XXX -- Need filechecking here, and safe failures.
-      if (files && window.FileReader) {
-        var reader = new FileReader();
+    'dragleave #features' : function(e, t) {
+      $(e.currentTarget).removeClass('dragover');
+    },
 
-        // This should probably go into a webworker
-        reader.onload = function(e){
-
-          var xml = e.target.result;
-          GPXtoGeoJSON(xml, function(json){
-            console.log(json);
-          });
-
-        }
-
-        reader.onerror = function(err){
-          console.log('err', err);
-        }
-
-        reader.readAsText(files[0]);
-      }
+    'drop #features' : function(e, t) {
+      e.preventDefault();
+      $(e.currentTarget).removeClass('dragover');
       
-      return false; 
+      var files = e.dataTransfer.files;
+
+      if (!files || !window.FileReader)
+        return 
+
+      var reader = new FileReader();
+      reader.onload = function(e){
+        GPXtoGeoJSON(e.target.result, function(json){
+          createFeatures(json);
+        });
+      };
+
+      reader.readAsText(files[0]);
+
+    }
+
+  });
+
+
+  Template.sideBar.helpers({
+
+    features: function() {
+      if (Session.get('currentTrail'))
+        return Features.find({trail: Session.get('currentTrail')});
     }
   })
 
