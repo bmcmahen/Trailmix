@@ -23,4 +23,31 @@
       </div>
     </div>
   </div>
+  {{> modals}}
 </body>
+
+<template name='modals'>
+  <div id='add-new-trail-modal' class='modal hide slide' tabindex='-1' role='dialog' aria-hidden='true'>
+    <h2> new trail </h2>
+    <form id='new-trail' name='new-trail'>
+      <input class='trail-name' placeholder='Trail Name' type='text'>
+      <input class='btn btn-primary' type='submit'>
+    </form>
+  </div>
+
+  <div id='view-my-trails-modal' class='modal hide slide' tabindex='-1' role='dialog' aria-hidden='true'>
+    <h2> my trails </h2>
+    {{#if trails}}
+      <ul>
+        {{#each trails}}
+          {{> myTrails}}
+        {{/each}}
+      </ul>
+    {{else}}
+    <p> You don't have any trails favourited </p>
+    {{/if}}
+</template>
+
+<template name='myTrails'>
+  <li> <a href='#' class='my-trail'>{{this.name}}</a></li>
+</template>

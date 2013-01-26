@@ -30,25 +30,71 @@
       var feature = e.target; 
     },
 
+    determineIcon: function(feature){
+      var iconProperties = {
+        iconUrl: '/map_icons/marker-icon.png'
+      }
+
+      switch(feature.properties.sym.toLowerCase()){
+        case 'trail head':
+          _.defaults({
+            iconSize: [40, 90]
+          }, iconProperties);
+          break; 
+      }
+
+      return L.icon(iconProperties);
+    },
+
+    // By default, use a circle marker for trail intersections.
+    // if feature.properties.sym is specified, then use
+    // a custom icon. Say, for a campground. 
+    createMarker: function(feature){
+      var self = this
+        , coords = feature.geometry.coordinates
+        , sym = feature.properties.sym;
+
+      function circleMarker(){
+        return L.circleMarker(coords, {
+          stroke: false,
+          radius: 4,
+          fill: true,
+          fillColor: 'black',
+          fillOpacity: 1
+        });
+      }
+
+      function regularMarker(){
+        return L.marker(coords, {
+          icon: self.determineIcon(feature)
+        });
+      }
+
+      var el = sym ? regularMarker() : circleMarker();
+      el.on('click', _.bind(this.onMarkerClick, this));
+      return el; 
+    },
+
     // Create Leaflet features from JSON and add them to 
     // the layerGroup object and our id-to-features hash. 
     addFeature: function(feature) {
-
-      var el; 
+      var el, geom = feature.geometry; 
 
       // More types in the future?
-      switch(feature.geometry.type) {
+      switch(geom.type) {
 
         case 'Point':
-          el = L.marker(feature.geometry.coordinates);
-          el.on('click', _.bind(this.onMarkerClick, this));
+          el = this.createMarker(feature);
           break;
         
         case 'LineString':
-          el = L.polyline(feature.geometry.coordinates, {
-            color: 'blue'
+          el = L.polyline(geom.coordinates, {
+            color: 'blue',
+            weight: 3,
+            dashArray: '5, 5'
           });
           el.on('click', _.bind(this.onLineStringClick, this));
+          
           break; 
       }
 
@@ -66,7 +112,10 @@
     // features from our map. 
     removeFeature: function(feature) {
 
+      console.log(feature);
+
       var layer = this.idToFeatures[feature._id];
+      console.log(layer);
       if (layer) {
         this.features.removeLayer(layer);
         delete this.idToFeatures[feature._id];
@@ -75,18 +124,24 @@
       return this; 
     },
 
+    removeAllFeatures: function(){
+      this.features.clearLayers();
+      this.idToFeatures = {}; 
+    },
+
     // If our features change, redraw them. 
     updateFeature: function(feature) {
 
       // Simply remove, and add again. 
       // In the future, I may want to optimize this to update
       // the feature itself using setLatLng, setIcon, etc. 
-      this.removeFeature(featurs).addFeature(feature);
+      this.removeFeature(features).addFeature(feature);
       return this; 
     },
 
     fitBounds: function(){
-      this.map.fitBounds(this.features.getBounds());
+      if (this.features)
+        this.map.fitBounds(this.features.getBounds());
     },
 
     // Show all of our features on the map at maximum size.
@@ -95,7 +150,7 @@
       // Use a timer to only update the map once all of the
       // new features have been added.
       this.timer && clearInterval(this.timer);
-      this.timer = setTimeout(_.bind(this.fitBounds, this), 100); 
+      this.timer = setTimeout(_.bind(this.fitBounds, this), 300); 
 
     }
 
@@ -111,36 +166,50 @@
     // Set Map Height
     
     $('#map').height($(window).height() - 80);
+    var trailMap = new MapView(); 
+    trailmix.map = trailMap; 
 
-     var trailMap = new MapView(); 
+    // Run an observe query  on whatever trail
+    // we are currently viewing.
+    Meteor.autorun(function() {
 
-     // expose our map object as a global variable. 
-     trailmix.map = trailMap; 
-
-    // When our Collection changes, update the map. 
-    var trailQuery = Features.find({
-      trail: Session.get('currentTrail'
-    )})
-     
-     this.handle = trailQuery.observe({
-
-      added: function(document, beforeIndex){
-        trailMap.addFeature(document).delayFitBounds();
-        // XXX - Use Meteor.setTimeout to update the map bounds
-        // after a certain time, clearing it if added callback is
-        // called. This should ensure that it's only called
-        // once the subscription has finished?
-      },
-
-      changed: function(newDocument, atIndex, oldDocument){
-        trailMap.updateFeature(newDocument).fitBounds();
-      },
-
-      removed: function(oldDocument, atIndex){
-        trailMap.removeFeature(oldDocument).fitBounds();
+      // If a trail has previously been selected
+      // then stop observing it, remove the map features
+      // and make a new query with the new trail. 
+      if (this.handle) {
+        this.handle.stop();
+        trailMap.removeAllFeatures(); 
       }
 
-     });
+      this.trailQuery = Features.find({
+        trail: Session.get('currentTrail')
+      });
+
+      this.handle = trailQuery.observe({
+        added: function(document){
+          console.log('added called');
+          trailMap.addFeature(document).delayFitBounds();
+        },
+        changed: function(newDocument, index, oldDocument) {
+          // I don't understand why this is necessary. But
+          // changed seems to be fired on newly created
+          // documents that are part of this query. This
+          // means that changed & added are both fired. But
+          // if I compare newDocument and oldDocument, they
+          // are the same. 
+          if (! _.isEqual(newDocument, oldDocument)) {
+            console.log('we need to update this');
+          }
+          
+        },
+        removed: function(oldDocument) {
+          trailMap.removeFeature(oldDocument);
+        }
+      });
+
+    });
+
+   
 
   };
 

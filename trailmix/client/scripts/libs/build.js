@@ -1,3 +1,11 @@
+
+
+/**
+ * hasOwnProperty.
+ */
+
+var has = Object.prototype.hasOwnProperty;
+
 /**
  * Require the given path.
  *
@@ -6,27 +14,32 @@
  * @api public
  */
 
-function require(p, parent, orig){
-  var path = require.resolve(p)
-    , mod = require.modules[path];
+function require(path, parent, orig) {
+  var resolved = require.resolve(path);
 
   // lookup failed
-  if (null == path) {
-    orig = orig || p;
+  if (null == resolved) {
+    orig = orig || path;
     parent = parent || 'root';
-    throw new Error('failed to require "' + orig + '" from "' + parent + '"');
+    var err = new Error('Failed to require "' + orig + '" from "' + parent + '"');
+    err.path = orig;
+    err.parent = parent;
+    err.require = true;
+    throw err;
   }
+
+  var module = require.modules[resolved];
 
   // perform real require()
   // by invoking the module's
   // registered function
-  if (!mod.exports) {
-    mod.exports = {};
-    mod.client = mod.component = true;
-    mod.call(this, mod, mod.exports, require.relative(path));
+  if (!module.exports) {
+    module.exports = {};
+    module.client = module.component = true;
+    module.call(this, module.exports, require.relative(resolved), module);
   }
 
-  return mod.exports;
+  return module.exports;
 }
 
 /**
@@ -55,19 +68,25 @@ require.aliases = {};
  * @api private
  */
 
-require.resolve = function(path){
-  var orig = path
-    , reg = path + '.js'
-    , regJSON = path + '.json'
-    , index = path + '/index.js'
-    , indexJSON = path + '/index.json';
+require.resolve = function(path) {
+  var index = path + '/index.js';
 
-  return require.modules[reg] && reg
-    || require.modules[regJSON] && regJSON
-    || require.modules[index] && index
-    || require.modules[indexJSON] && indexJSON
-    || require.modules[orig] && orig
-    || require.aliases[index];
+  var paths = [
+    path,
+    path + '.js',
+    path + '.json',
+    path + '/index.js',
+    path + '/index.json'
+  ];
+
+  for (var i = 0; i < paths.length; i++) {
+    var path = paths[i];
+    if (has.call(require.modules, path)) return path;
+  }
+
+  if (has.call(require.aliases, index)) {
+    return require.aliases[index];
+  }
 };
 
 /**
@@ -99,15 +118,15 @@ require.normalize = function(curr, path) {
 };
 
 /**
- * Register module at `path` with callback `fn`.
+ * Register module at `path` with callback `definition`.
  *
  * @param {String} path
- * @param {Function} fn
+ * @param {Function} definition
  * @api private
  */
 
-require.register = function(path, fn){
-  require.modules[path] = fn;
+require.register = function(path, definition) {
+  require.modules[path] = definition;
 };
 
 /**
@@ -118,9 +137,10 @@ require.register = function(path, fn){
  * @api private
  */
 
-require.alias = function(from, to){
-  var fn = require.modules[from];
-  if (!fn) throw new Error('failed to alias "' + from + '", it does not exist');
+require.alias = function(from, to) {
+  if (!has.call(require.modules, from)) {
+    throw new Error('Failed to alias "' + from + '", it does not exist');
+  }
   require.aliases[to] = from;
 };
 
@@ -139,7 +159,7 @@ require.relative = function(parent) {
    * lastIndexOf helper.
    */
 
-  function lastIndexOf(arr, obj){
+  function lastIndexOf(arr, obj) {
     var i = arr.length;
     while (i--) {
       if (arr[i] === obj) return i;
@@ -151,17 +171,16 @@ require.relative = function(parent) {
    * The relative require() itself.
    */
 
-  function fn(path){
-    var orig = path;
-    path = fn.resolve(path);
-    return require(path, parent, orig);
+  function localRequire(path) {
+    var resolved = localRequire.resolve(path);
+    return require(resolved, parent, path);
   }
 
   /**
    * Resolve relative to the parent.
    */
 
-  fn.resolve = function(path){
+  localRequire.resolve = function(path) {
     // resolve deps by returning
     // the dep in the nearest "deps"
     // directory
@@ -179,12 +198,13 @@ require.relative = function(parent) {
    * Check if module is defined at `path`.
    */
 
-  fn.exists = function(path){
-    return !! require.modules[fn.resolve(path)];
+  localRequire.exists = function(path) {
+    return has.call(require.modules, localRequire.resolve(path));
   };
 
-  return fn;
-};require.register("component-emitter/index.js", function(module, exports, require){
+  return localRequire;
+};
+require.register("component-emitter/index.js", function(exports, require, module){
 
 /**
  * Expose `Emitter`.
@@ -335,120 +355,76 @@ Emitter.prototype.hasListeners = function(event){
 };
 
 });
-require.register("bmcmahen-upload/index.js", function(module, exports, require){
-
+require.register("bmcmahen-modal/index.js", function(exports, require, module){
 /**
- * Module dependencies.
+ * Modal Module
+ *
+ * Super simple modal dialogues. 
+ * 
  */
 
 var Emitter = require('emitter');
 
-/**
- * Expose `Upload`.
- */
-
-module.exports = Upload;
-
-/**
- * Initialize a new `Upload` file`.
- * This represents a single file upload.
- *
- * Events:
- *
- *   - `error` an error occurred
- *   - `abort` upload was aborted
- *   - `progress` upload in progress (`e.percent` etc)
- *   - `end` upload is complete
- *
- * @param {File} file
- * @api private
- */
-
-function Upload(file) {
-  if (!(this instanceof Upload)) return new Upload(file);
-  Emitter.call(this);
-  this.file = file;
+module.exports = function(selector, options){
+	if (typeof selector === 'string') {
+		return new Modal(document.querySelector(selector), options);
+	}
 }
 
-/**
- * Mixin emitter.
- */
+// Constructor
+var Modal = function (element, options) {
+	this.options = options || {}; 
+	this.element = element;
+	this.isShown = false; 
+}
 
-Emitter(Upload.prototype);
 
-/**
- * Upload to the given `path`.
- *
- * @param {String} path
- * @param {Function} [fn]
- * @api public
- */
+Modal.prototype = new Emitter();
 
-Upload.prototype.to = function(path, fn){
-  // TODO: x-browser
-  var self = this;
-  fn = fn || function(){};
-  var req = this.req = new XMLHttpRequest;
-  req.open('POST', path);
-  req.onload = this.onload.bind(this);
-  req.onerror = this.onerror.bind(this);
-  req.upload.onprogress = this.onprogress.bind(this);
-  req.onreadystatechange = function(){
-    if (4 == req.readyState) {
-      var type = req.status / 100 | 0;
-      if (2 == type) return fn(null, req);
-      var err = new Error(req.statusText + ': ' + req.response);
-      err.status = req.status;
-      fn(err);
-    }
-  };
-  var body = new FormData;
-  body.append('file', this.file);
-  req.send(body);
+
+// Functions
+
+Modal.prototype.toggle = function(){
+	this.isShown ? this.hide() : this.show(); 
 };
 
-/**
- * Abort the XHR.
- *
- * @api public
- */
+Modal.prototype.show = function(){
+	var self = this
+		, el = self.element; 
 
-Upload.prototype.abort = function(){
-  this.emit('abort');
-  this.req.abort();
+	if (this.isShown)
+		return
+
+	self.isShown = true; 
+	self.emit('show');
+
+	el.className += ' in';
+	el.setAttribute('aria-hidden', false);
+	el.focus(); // for aria-support, must have tabindex='-1' set.
+
+	return this; 
 };
 
-/**
- * Error handler.
- *
- * @api private
- */
+Modal.prototype.hide = function(){
+	var self = this
+		, el = self.element; 
 
-Upload.prototype.onerror = function(e){
-  this.emit('error', e);
+	if (!this.isShown)
+		return
+
+	self.isShown = false; 
+	self.emit('hide');
+
+	self.remove(); 
 };
 
-/**
- * Onload handler.
- *
- * @api private
- */
-
-Upload.prototype.onload = function(e){
-  this.emit('end', this.req);
-};
-
-/**
- * Progress handler.
- *
- * @api private
- */
-
-Upload.prototype.onprogress = function(e){
-  e.percent = e.loaded / e.total * 100;
-  this.emit('progress', e);
+Modal.prototype.remove = function(){
+	var el = this.element; 
+	el.className = el.className.replace( /(?:^|\s)in(?!\S)/g , '' )
+	el.setAttribute('aria-hidden', true);
 };
 
 });
-require.alias("bmcmahen-upload/index.js", "undefined/deps/upload/index.js");
-require.alias("component-emitter/index.js", "bmcmahen-upload/deps/emitter/index.js");
+require.alias("bmcmahen-modal/index.js", "undefined/deps/modal/index.js");
+require.alias("component-emitter/index.js", "bmcmahen-modal/deps/emitter/index.js");
+

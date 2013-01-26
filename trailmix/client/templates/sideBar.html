@@ -1,6 +1,7 @@
 <template name='sideBar'>
-  <h3> New Trail </h3>
-  <input type='text' id='add-trail-name' placeholder='Trail Name'>
+  {{#with trail}}
+  <h3> {{this.name}} </h3>
+  {{/with}}
   <br>
   <a class='btn'>Add Point</a>
   <a class='btn'>Add Line</a>
@@ -17,5 +18,7 @@
 </template>
 
 <template name='feature'>
-  <li> {{this.properties.name}} - {{this.geometry.type}} </li>
+  <li> {{this.properties.name}} - {{this.geometry.type}} -
+  <button class='delete-feature'>Delete </button>
+  </li>
 </template>

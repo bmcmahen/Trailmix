@@ -22,6 +22,14 @@ Meteor.publish('features', function(trailId){
 });
 
 // XXX Shouldn't publish all trails.
+// Only publish current trail & favourites?
 Meteor.publish('trails', function(){
   return Trails.find();
 });
+
+// // Publish the current user's favourites
+// Meteor.publish('userFavourites', function(){
+//   return Meteor.users.find(this.userId, {
+//     fields: {'favourites' : 1}
+//   });
+// });
