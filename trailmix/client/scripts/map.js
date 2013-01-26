@@ -12,12 +12,23 @@
       zoom: 13,
       layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png')
     }); 
-    this.features = L.layerGroup().addTo(this.map);
+    this.features = L.featureGroup().addTo(this.map);
     this.idToFeatures = {}; 
 
   }
 
   _.extend(MapView.prototype, {
+
+    // When clicked, highlight the feature in the DOM
+    // Maybe change its color to indicate that it's clicked?
+    onMarkerClick: function(e) {
+      var feature = e.target; 
+    },
+
+    // When clicked, highlight the feature in the DOM
+    onLineStringClick: function(e){
+      var feature = e.target; 
+    },
 
     // Create Leaflet features from JSON and add them to 
     // the layerGroup object and our id-to-features hash. 
@@ -29,18 +40,20 @@
       switch(feature.geometry.type) {
 
         case 'Point':
-          el = L.marker(feature.geometry.coordinates)
-                .bindPopup(feature.properties.name)
+          el = L.marker(feature.geometry.coordinates);
+          el.on('click', _.bind(this.onMarkerClick, this));
           break;
         
         case 'LineString':
           el = L.polyline(feature.geometry.coordinates, {
             color: 'blue'
           });
+          el.on('click', _.bind(this.onLineStringClick, this));
           break; 
       }
 
       if (el) {
+        el._id = feature._id; 
         this.features.addLayer(el);
         this.idToFeatures[feature._id] = el; 
       }
@@ -72,10 +85,17 @@
       return this; 
     },
 
-    // Show all of our features on the map at maximum size.
     fitBounds: function(){
-
       this.map.fitBounds(this.features.getBounds());
+    },
+
+    // Show all of our features on the map at maximum size.
+    delayFitBounds: function(){
+
+      // Use a timer to only update the map once all of the
+      // new features have been added.
+      this.timer && clearInterval(this.timer);
+      this.timer = setTimeout(_.bind(this.fitBounds, this), 100); 
 
     }
 
@@ -105,15 +125,19 @@
      this.handle = trailQuery.observe({
 
       added: function(document, beforeIndex){
-        trailMap.addFeature(document);
+        trailMap.addFeature(document).delayFitBounds();
+        // XXX - Use Meteor.setTimeout to update the map bounds
+        // after a certain time, clearing it if added callback is
+        // called. This should ensure that it's only called
+        // once the subscription has finished?
       },
 
       changed: function(newDocument, atIndex, oldDocument){
-        trailMap.updateFeature(newDocument);
+        trailMap.updateFeature(newDocument).fitBounds();
       },
 
       removed: function(oldDocument, atIndex){
-        trailMap.removeFeature(oldDocument);
+        trailMap.removeFeature(oldDocument).fitBounds();
       }
 
      });

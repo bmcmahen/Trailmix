@@ -120,42 +120,6 @@
   }
 
 
-  var drawFeatures = function(json){
-
-
-    var features = [];
-
-    var icon = L.icon({
-      iconUrl: '/map_icons/marker-icon.png',
-      shadowUrl: '/map_icons/marker-shadow.png',
-      iconAnchor: [10, 40],
-      popupAnchor: [0, -40]
-    });
-
-    _.each(json, function(feature, i){
-
-      if (feature.geometry.type === 'Point') {
-
-        features.push(L.circleMarker(feature.geometry.coordinates)
-          .bindPopup(feature.properties.name));
-
-      } else if (feature.geometry.type === 'LineString') {
-
-        var pl = L.polyline(feature.geometry.coordinates, {
-          color: 'blue'
-        });
-        features.push(pl);
-
-      }
-
-    });
-
-    var featureGroup = L.featureGroup(features).addTo(Trailmix.map);
-    Trailmix.map.fitBounds(featureGroup.getBounds());
-
-  }
-
-
   // Take an array of features, and insert them into the database
   // with the currentTrail _id as the trail attribute. This should
   // update our trail automatically. 
@@ -166,29 +130,6 @@
     });
   }
 
-  // XXX - To have interaction between leaflet and dom, I'll need
-  // to create a hash of id : marker/polyline. 
-  // 
-  // To remember an id you can do something like:
-
-  // var m = new L.Marker(...);
-  // m._myId = 12345;
-  // Then grab that out in the callback:
-
-  // map.on('popupopen', function (e) {
-  //     alert(e.popup._source._myId);
-  // });
-
-  // The other way:
-  // 
-  // 
-  // Map id to Object
-  // 
-  // _id : marker,
-  // _id: polyline
-  // 
-  // Map.removeLayer(obj[_id]);
-  // 
 
   Template.sideBar.rendered = function(){
 
