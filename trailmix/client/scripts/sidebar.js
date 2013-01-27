@@ -135,7 +135,6 @@
 
     // Meteor doesn't handle universal events very well,
     // so we handle them here. 
-
     $(window).on('dragover', function(e){
       e.preventDefault(); 
       $('#features').addClass('dragover');
@@ -152,6 +151,8 @@
   };
 
   Template.sideBar.destroyed = function(){
+
+    // Unbind our window events
     $(window).off('dragover, dragleave, drop');
 
   }
@@ -167,6 +168,7 @@
       $(e.currentTarget).removeClass('dragover');
     },
 
+    // convert a gpx file into features on drop
     'drop #features' : function(e, t) {
       e.preventDefault();
       $(e.currentTarget).removeClass('dragover');
@@ -187,8 +189,35 @@
 
     },
 
+    // remove a feature
     'click .delete-feature' : function(e, t) {
       Features.remove(this._id);
+    },
+
+    // enter editing mode
+    'click .edit-trail' : function(e, t) {
+      Session.set('isEditing', true);
+    },
+
+    // exit editing mode
+    'click .finish-editing' : function(e, t) {
+      Session.set('isEditing', false);
+    },
+
+    // Update the trail name and description. 
+    'submit #trail-info' : function(e, t) {
+
+      e.preventDefault(); 
+
+      var name = t.find('.name').value
+        , desc = t.find('.description').value; 
+
+      Trails.update({_id: this._id}, {'$set' : { 
+        name: name,
+        description: desc
+      }}); 
+
+      return false;
     }
 
   });
@@ -196,14 +225,21 @@
 
   Template.sideBar.helpers({
 
+    // our selected trail's features
     features: function() {
       if (Session.get('currentTrail'))
         return Features.find({trail: Session.get('currentTrail')});
     },
 
+    // our selected trail
     trail : function(){
       var current = Session.get('currentTrail');
       return current && Trails.findOne(current);
+    },
+
+    // whether we are in edit mode or not
+    isEditing : function() {
+      return Session.get('isEditing');
     }
   });
 

@@ -55,6 +55,7 @@ Template.modals.events({
     if (name) {
       var newTrail = Trails.insert({ name : name });
       Session.set('currentTrail', newTrail);
+      Session.set('isEditing', true);
       addToFavourites(newTrail);
       newTrailModal.hide(); 
 

@@ -21,3 +21,4 @@ Meteor.autosubscribe(function () {
  */
 
 Session.set('currentTrail', null);
+Session.set('isEditing', false);

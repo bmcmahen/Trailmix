@@ -28,6 +28,27 @@
     // When clicked, highlight the feature in the DOM
     onLineStringClick: function(e){
       var feature = e.target; 
+      // if in splice mode
+      // feature.spliceLatLngs()
+      // https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Array/splice
+    },
+
+    onDragEnd: function(e) {
+      var feature = e.target; 
+    },
+
+    // Enable marker dragging in edit mode
+    enableMarkerDragging: function(){
+      this.features.eachLayer(function(layer){
+        layer.dragging && layer.dragging.enable(); 
+      });
+    },
+
+    // Disable marker dragging in edit mode
+    disableMarkerDragging: function(){
+      this.features.eachLayer(function(layer){
+        layer.dragging && layer.dragging.disable(); 
+      });
     },
 
     determineIcon: function(feature){
@@ -72,6 +93,7 @@
 
       var el = sym ? regularMarker() : circleMarker();
       el.on('click', _.bind(this.onMarkerClick, this));
+      el.on('dragend', _.bind(this.onDragEnd, this));
       return el; 
     },
 
@@ -90,11 +112,11 @@
         case 'LineString':
           el = L.polyline(geom.coordinates, {
             color: 'blue',
-            weight: 3,
-            dashArray: '5, 5'
+            opacity: 1,
+            weight: 2.5,
+            dashArray: '8, 5'
           });
           el.on('click', _.bind(this.onLineStringClick, this));
-          
           break; 
       }
 
@@ -105,22 +127,16 @@
       }
 
       return this; 
-
     },
 
     // Use our id-to-features hash to remove certain
     // features from our map. 
     removeFeature: function(feature) {
-
-      console.log(feature);
-
       var layer = this.idToFeatures[feature._id];
-      console.log(layer);
       if (layer) {
         this.features.removeLayer(layer);
         delete this.idToFeatures[feature._id];
       }
-
       return this; 
     },
 
@@ -131,7 +147,6 @@
 
     // If our features change, redraw them. 
     updateFeature: function(feature) {
-
       // Simply remove, and add again. 
       // In the future, I may want to optimize this to update
       // the feature itself using setLatLng, setIcon, etc. 
@@ -146,7 +161,6 @@
 
     // Show all of our features on the map at maximum size.
     delayFitBounds: function(){
-
       // Use a timer to only update the map once all of the
       // new features have been added.
       this.timer && clearInterval(this.timer);
