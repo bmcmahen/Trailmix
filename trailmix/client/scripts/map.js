@@ -7,6 +7,7 @@
   
   var MapView = function(map){
 
+    this.$el = $('#map');
     this.map = map || new L.Map('map', {
       center: new L.LatLng(53.1103, -119.1567),
       zoom: 13,
@@ -15,9 +16,16 @@
     this.features = L.featureGroup().addTo(this.map);
     this.idToFeatures = {}; 
 
+    this.resizeMap(); 
+
   }
 
   _.extend(MapView.prototype, {
+
+    resizeMap: function(){
+      this.$el.height($(window).height() - 80);
+      this.map.invalidateSize(true);
+    },
 
     // When clicked, highlight the feature in the DOM
     // Maybe change its color to indicate that it's clicked?
@@ -34,7 +42,15 @@
     },
 
     onDragEnd: function(e) {
-      var feature = e.target; 
+      var feature = e.target
+        , latLng = feature.getLatLng(); 
+
+        console.log(latLng);
+
+      Features.update({_id: feature._id}, {'$set' : {
+        'geometry.coordinates' : [latLng.lat, latLng.lng]
+        }
+      });
     },
 
     // Enable marker dragging in edit mode
@@ -94,6 +110,7 @@
       var el = sym ? regularMarker() : circleMarker();
       el.on('click', _.bind(this.onMarkerClick, this));
       el.on('dragend', _.bind(this.onDragEnd, this));
+
       return el; 
     },
 
@@ -121,8 +138,17 @@
       }
 
       if (el) {
+
+        // Set an _id attribute to the element so that we can
+        // later update the database document. 
         el._id = feature._id; 
         this.features.addLayer(el);
+
+        // If we are editing, make sure that we enable marker
+        // dragging and dropping. 
+        if (Session.get('isEditing')) {
+          el.dragging && el.dragging.enable();
+        }
         this.idToFeatures[feature._id] = el; 
       }
 
@@ -166,10 +192,28 @@
       this.timer && clearInterval(this.timer);
       this.timer = setTimeout(_.bind(this.fitBounds, this), 300); 
 
+    },
+
+    toggleEditing: function(){
+      Session.get('isEditing') 
+        ? this.enableMarkerDragging()
+        : this.disableMarkerDragging(); 
     }
 
   });
 
+// If editing, automatically enable certain interactive
+// features with our map. 
+Meteor.autorun(function(){
+  Session.get('isEditing');
+  trailmix.map && trailmix.map.toggleEditing();
+});
+
+// Resize the map based on window size
+function resizeMap(){
+  $('#map').height($(window).height() - 80);
+  trailmix.map && trailmix.map.fitBounds(); 
+}
 
 /**
  * MapView Rendered Callback
@@ -177,11 +221,15 @@
 
   Template.mapView.rendered = function(){
 
-    // Set Map Height
-    
-    $('#map').height($(window).height() - 80);
+    // Create Map
     var trailMap = new MapView(); 
+
+    // Attach it to our global variable
     trailmix.map = trailMap; 
+
+    // When resizing the window, resize the map
+    var resizeMap = _.bind(trailMap.resizeMap, trailMap);
+    $(window).on('resize', _.debounce(resizeMap, 100));
 
     // Run an observe query  on whatever trail
     // we are currently viewing.
@@ -212,7 +260,7 @@
           // if I compare newDocument and oldDocument, they
           // are the same. 
           if (! _.isEqual(newDocument, oldDocument)) {
-            console.log('we need to update this');
+            console.log('we need to update this', newDocument, oldDocument);
           }
           
         },
