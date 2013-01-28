@@ -1,3 +1,22 @@
+@import 'nib'
+
 #map
   width 100%
   min-height 400px
+  z-index 500
+
+.editing .leaflet-marker-icon.leaflet-clickable
+  cursor move
+
+#editing-view
+  position: absolute
+  top: 0
+  left: 0
+  width: 100%
+  z-index: 1
+  opacity: 1
+  height: 100%
+  z-index: 1000
+  box-shadow: inset 10px 10px 20px rgba(0,0,0,0.3)
+  transition-property opacity
+  transition-duration 0.5s

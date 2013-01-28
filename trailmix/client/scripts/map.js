@@ -25,6 +25,7 @@
     resizeMap: function(){
       this.$el.height($(window).height() - 80);
       this.map.invalidateSize(true);
+      return this; 
     },
 
     // When clicked, highlight the feature in the DOM
@@ -45,8 +46,6 @@
       var feature = e.target
         , latLng = feature.getLatLng(); 
 
-        console.log(latLng);
-
       Features.update({_id: feature._id}, {'$set' : {
         'geometry.coordinates' : [latLng.lat, latLng.lng]
         }
@@ -58,6 +57,7 @@
       this.features.eachLayer(function(layer){
         layer.dragging && layer.dragging.enable(); 
       });
+      return this; 
     },
 
     // Disable marker dragging in edit mode
@@ -65,6 +65,21 @@
       this.features.eachLayer(function(layer){
         layer.dragging && layer.dragging.disable(); 
       });
+      return this; 
+    },
+
+    enablePolylineEditing: function(){
+      this.features.eachLayer(function(layer){
+        layer.editing && layer.editing.enable();
+      });
+      return this;
+    },
+
+    disablePolylineEditing: function(){
+      this.features.eachLayer(function(layer){
+        layer.editing && layer.editing.disable();
+      });
+      return this; 
     },
 
     determineIcon: function(feature){
@@ -114,6 +129,36 @@
       return el; 
     },
 
+    // Simplify our polyline so that it's a little less complicated.
+    // This should only be done when converting GPX to GeoJSON
+    // so that we can store the simplified data-set into the database.
+    // Let Leaflet handle the drawing. 
+    simplifyPolyline: function(coordinates){
+
+      console.log(coordinates);
+
+      // Convert each feature into a point.
+      var pts = _.map(coordinates, function(latlng, i){
+        var l = new L.LatLng(latlng[0], latlng[1]);
+        var pt = this.map.options.crs.latLngToPoint(l, 15);
+        return pt._round(); 
+      }, this);
+
+      console.log(pts.length);
+
+      // Simplify the points.
+      var simplified = L.LineUtil.simplify(pts, 1.8);
+
+      console.log(simplified.length);
+
+      // Convert back int latlngs.
+      return _.map(simplified, function(pt, i){
+        var latlng = this.map.options.crs.pointToLatLng(pt, 15);
+        return [latlng.lat, latlng.lng];
+      }, this);
+
+    },
+
     // Create Leaflet features from JSON and add them to 
     // the layerGroup object and our id-to-features hash. 
     addFeature: function(feature) {
@@ -123,7 +168,9 @@
       switch(geom.type) {
 
         case 'Point':
-          el = this.createMarker(feature);
+          el = this.createMarker(feature, {
+            riseOnHover: true
+          });
           break;
         
         case 'LineString':
@@ -133,6 +180,7 @@
             weight: 2.5,
             dashArray: '8, 5'
           });
+
           el.on('click', _.bind(this.onLineStringClick, this));
           break; 
       }
@@ -194,10 +242,20 @@
 
     },
 
+    // Toggle the edit-mode of the map. 
     toggleEditing: function(){
-      Session.get('isEditing') 
-        ? this.enableMarkerDragging()
-        : this.disableMarkerDragging(); 
+
+      if (Session.get('isEditing')) {
+        this
+          .enableMarkerDragging()
+          .enablePolylineEditing()
+          .$el.addClass('editing');
+      } else {
+        this
+          .disableMarkerDragging()
+          .disablePolylineEditing()
+          .$el.removeClass('editing');
+      }
     }
 
   });
@@ -249,7 +307,6 @@ function resizeMap(){
 
       this.handle = trailQuery.observe({
         added: function(document){
-          console.log('added called');
           trailMap.addFeature(document).delayFitBounds();
         },
         changed: function(newDocument, index, oldDocument) {

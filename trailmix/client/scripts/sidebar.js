@@ -1,123 +1,4 @@
-(function(Trailmix, sax){
-
-  /**
-   * [GPXtoGeoJSON converts a gpx string into GeoJSON]
-   * @param {[type]}   gpxString [xml gpx string]
-   * @param {Function} callback  [return with json]
-   */
-  
-  var GPXtoGeoJSON = function(gpxString, callback){
-
-    // Ensure that we have a string
-    if (!_.isString(gpxString))
-      gpxString = gpxString.toString('utf8');
-
-    var types = { 'wpt' : 'Point', 'trk' : 'LineString' }
-      , desiredProperties = ['ele', 'name', 'sym', 'desc', 'type']
-      , featureTypes = ['wpt', 'trk']
-      , parser = sax.parser(true)
-      , features = []
-      , feature = null
-      , currentTag = null
-      , featureName = null;
-
-    parser.onopentag = function(tag){
-
-      var aFeatureType = _.contains(featureTypes, tag.name);
-
-      // If it's not a feature type, or we aren't already in
-      // one, then ignore it. 
-      if (!aFeatureType && !feature)
-        return
-
-      // If it is a feature type, then create our feature
-      // object. 
-      if (aFeatureType) {      
-        feature = {
-          type: 'Feature',
-          geometry: {
-            type: types[tag.name],
-            coordinates: []
-          },
-          properties: {}
-        };
-        featureName = tag.name;
-      }
-
-      var attr = tag.attributes;
-      if (attr && attr.lat && attr.lon && feature) {
-
-        feature.geometry.coordinates.push([ +attr.lat, +attr.lon]);
-
-        if (featureName === 'wpt') {
-          feature.geometry.coordinates = feature.geometry.coordinates[0];
-        }
-
-      }
-
-      // If we have a currentTag, set the parent attribute
-      // of this tag to be it. 
-      tag.parent = currentTag; 
-      tag.children = [];
-      tag.parent && tag.parent.children.push(tag);
-      currentTag = tag; 
-
-    }
-
-    parser.onclosetag = function(tagName){
-
-      // If it's the feature name, then push the
-      // feature object to our array
-      if (tagName === featureName){
-
-        // I'll need to determine if I actually need a simpliciation algorithm, or 
-        // whether or not I should just let leaflet handle this for drawing purposes. 
-        // For now, I'll have a fail-safe, so if it's over 10000 points (which should be
-        // ver unusual) I'll run simplification functions. 
-        if (featureName === 'trk' && feature.geometry.coordinates.length > 10000) {
-          // var coords = feature.geometry.coordinates
-          // , result = simplify(coords, 1);
-
-          // feature.geometry.coordinates = result; 
-        }
-
-        features.push(feature);
-        currentTag = feature = null;
-        return
-      }
-
-      // If our currentTag has a parent, then
-      // set the currentTag to be that parent. 
-      if (currentTag && currentTag.parent) {
-        var p = currentTag.parent;
-        delete currentTag.parent;
-        currentTag = p; 
-      }
-    }
-
-    parser.ontext = function(text) {
-      if (!currentTag || !text)
-        return
-
-      if (!_.contains(desiredProperties, currentTag.name))
-        return
-
-      // Add text and their tags to the properites
-      // object.
-      if (feature) {
-        var txt = {};
-        txt[currentTag.name] = text; 
-        _.extend(feature.properties, txt);
-      }
-    }
-
-    parser.onend = function(){
-      callback(features);
-    }
-
-    parser.write(gpxString).close();
-
-  }
+(function(Trailmix){
 
 
   // Take an array of features, and insert them into the database
@@ -127,7 +8,7 @@
     _.each(json, function(feature, i){
       _.extend(feature, {trail : Session.get('currentTrail')});
       Features.insert(feature);
-    });
+    }, this);
   }
 
 
@@ -168,7 +49,7 @@
       $(e.currentTarget).removeClass('dragover');
     },
 
-    // convert a gpx file into features on drop
+    // Converts a GPX object 
     'drop #features' : function(e, t) {
       e.preventDefault();
       $(e.currentTarget).removeClass('dragover');
@@ -178,9 +59,12 @@
       if (!files || !window.FileReader)
         return 
 
+      // XXX Make sure our browser supports the FIleReader
+      // ... i.e., not IE < 10 (hah)
       var reader = new FileReader();
       reader.onload = function(e){
-        GPXtoGeoJSON(e.target.result, function(json){
+        var util = Trailmix.Utils;
+        util.GPXtoGeoJSON(e.target.result, function(json){
           createFeatures(json);
         });
       };
@@ -243,4 +127,4 @@
     }
   });
 
-})(Trailmix, sax);
+})(Trailmix);
