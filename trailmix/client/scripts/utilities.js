@@ -12,7 +12,6 @@
   // XXX Eventually make a Parser class, which allows us to
   // convert among many different formats. GPX, KML, GeoJSON, 
   // and back again. 
-  
   Utils.GPXtoGeoJSON = function(gpxString, callback) {
 
     // Ensure that we have a string
@@ -29,14 +28,10 @@
       , featureName = null;
 
     parser.onopentag = function(tag){
-
       var aFeatureType = _.contains(featureTypes, tag.name);
-
       // If it's not a feature type, or we aren't already in
       // one, then ignore it. 
-      if (!aFeatureType && !feature)
-        return
-
+      if (!aFeatureType && !feature) return
       // If it is a feature type, then create our feature
       // object. 
       if (aFeatureType) {      
@@ -52,31 +47,25 @@
       }
 
       var attr = tag.attributes;
+
       if (attr && attr.lat && attr.lon && feature) {
-
         feature.geometry.coordinates.push([ +attr.lat, +attr.lon]);
-
         if (featureName === 'wpt') {
           feature.geometry.coordinates = feature.geometry.coordinates[0];
         }
-
       }
-
       // If we have a currentTag, set the parent attribute
       // of this tag to be it. 
       tag.parent = currentTag; 
       tag.children = [];
       tag.parent && tag.parent.children.push(tag);
       currentTag = tag; 
-
-    }
+    };
 
     parser.onclosetag = function(tagName){
-
       // If it's the feature name, then push the
       // feature object to our array
       if (tagName === featureName){
-
         // Make sure we simplify the trk coordinates. This is mostly for performance
         // reasons. Notably, 'edit polyline mode' slows to a crawl if 
         // we don't do anything. 
@@ -86,12 +75,10 @@
 
           feature.geometry.coordinates = newCoords; 
         }
-
         features.push(feature);
         currentTag = feature = null;
         return
       }
-
       // If our currentTag has a parent, then
       // set the currentTag to be that parent. 
       if (currentTag && currentTag.parent) {
@@ -99,29 +86,24 @@
         delete currentTag.parent;
         currentTag = p; 
       }
-    }
+    };
 
     parser.ontext = function(text) {
-      if (!currentTag || !text)
-        return
-
-      if (!_.contains(desiredProperties, currentTag.name))
-        return
-
-      // Add text and their tags to the properites
-      // object.
+      if (!currentTag || !text) return
+      if (!_.contains(desiredProperties, currentTag.name)) return
+      // Add text and their tags to the properites object
       if (feature) {
         var txt = {};
         txt[currentTag.name] = text; 
         _.extend(feature.properties, txt);
       }
-    }
+    };
 
     parser.onend = function(){
       callback(features);
-    }
+    };
 
     parser.write(gpxString).close();
-  }
+  };
 
 })(Trailmix, sax);

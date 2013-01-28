@@ -1,12 +1,11 @@
 (function(trailmix){
 
   /**
-   * Mapview Class
+   * MapView Prototype
    * 
    */
   
   var MapView = function(map){
-
     this.$el = $('#map');
     this.map = map || new L.Map('map', {
       center: new L.LatLng(53.1103, -119.1567),
@@ -15,9 +14,7 @@
     }); 
     this.features = L.featureGroup().addTo(this.map);
     this.idToFeatures = {}; 
-
     this.resizeMap(); 
-
   }
 
   _.extend(MapView.prototype, {
@@ -45,7 +42,6 @@
     onDragEnd: function(e) {
       var feature = e.target
         , latLng = feature.getLatLng(); 
-
       Features.update({_id: feature._id}, {'$set' : {
         'geometry.coordinates' : [latLng.lat, latLng.lng]
         }
@@ -83,10 +79,7 @@
     },
 
     determineIcon: function(feature){
-      var iconProperties = {
-        iconUrl: '/map_icons/marker-icon.png'
-      }
-
+      var iconProperties = { iconUrl: '/map_icons/marker-icon.png' }
       switch(feature.properties.sym.toLowerCase()){
         case 'trail head':
           _.defaults({
@@ -94,7 +87,6 @@
           }, iconProperties);
           break; 
       }
-
       return L.icon(iconProperties);
     },
 
@@ -135,23 +127,16 @@
     // Let Leaflet handle the drawing. 
     simplifyPolyline: function(coordinates){
 
-      console.log(coordinates);
-
       // Convert each feature into a point.
       var pts = _.map(coordinates, function(latlng, i){
         var l = new L.LatLng(latlng[0], latlng[1]);
-        var pt = this.map.options.crs.latLngToPoint(l, 15);
-        return pt._round(); 
+        return this.map.options.crs.latLngToPoint(l, 15)._round();
       }, this);
-
-      console.log(pts.length);
 
       // Simplify the points.
       var simplified = L.LineUtil.simplify(pts, 1.8);
 
-      console.log(simplified.length);
-
-      // Convert back int latlngs.
+      // Convert back into latlngs.
       return _.map(simplified, function(pt, i){
         var latlng = this.map.options.crs.pointToLatLng(pt, 15);
         return [latlng.lat, latlng.lng];
@@ -186,7 +171,6 @@
       }
 
       if (el) {
-
         // Set an _id attribute to the element so that we can
         // later update the database document. 
         el._id = feature._id; 
@@ -224,7 +208,7 @@
       // Simply remove, and add again. 
       // In the future, I may want to optimize this to update
       // the feature itself using setLatLng, setIcon, etc. 
-      this.removeFeature(features).addFeature(feature);
+      this.removeFeature(feature).addFeature(feature);
       return this; 
     },
 
@@ -239,12 +223,10 @@
       // new features have been added.
       this.timer && clearInterval(this.timer);
       this.timer = setTimeout(_.bind(this.fitBounds, this), 300); 
-
     },
 
     // Toggle the edit-mode of the map. 
     toggleEditing: function(){
-
       if (Session.get('isEditing')) {
         this
           .enableMarkerDragging()
