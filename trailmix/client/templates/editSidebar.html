@@ -1,0 +1,59 @@
+<template name='editSidebar'>
+    {{#isolate}}
+      {{#with trail}}
+      <div class='meta-wrapper'>
+      <h2> {{this.name}} </h2>
+    </div>
+      {{/with}}
+    {{/isolate}}
+    <ul id='edit-tabs' class='nav nav-tabs'>
+      <li>
+        <a class='description {{#if descriptionTab}} active {{/if}}'>Description</a>
+      </li>
+      <li>
+        <a class='features {{#if featuresTab}} active {{/if}}'>Features</a>
+      </li>
+    </ul>
+
+    <div id='edit-tabs-content' class='tab-content'>
+
+      {{#if featuresTab}}
+      <div class='tab-pane' id='features'> 
+        <div class='tab-controls'> 
+          <button class='btn btn-pink'>Add Point</button>
+          <button class='btn btn-green'>Add Line</button>
+        </div>
+        <div id='features'>
+          <ul>
+            {{#each features}}
+              {{>feature}}
+            {{/each}}
+          </ul>
+        </div>
+      </div>
+      {{/if}}
+
+      {{#if descriptionTab}}
+      <div class='tab-pane'>
+        <p> various text fields </p>
+      </div>
+      {{/if}}
+
+    </div>
+</template>
+
+
+<template name='feature'>
+  <li id='{{this._id}}' class='feature-instance {{#if selected}} selected {{/if}}'> 
+    <div class='type'>
+      {{this.geometry.type}}
+    </div>
+    <div class='name'>
+      {{this.properties.name}}
+    </div>
+    <div class='controls'>
+      <button class='btn small delete-feature'> Delete </button>
+      <button class='btn small edit-feature'> Edit </button>
+    </div>
+  </li>
+</template>

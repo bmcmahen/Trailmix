@@ -1,8 +1,12 @@
 
 <head>
   <title> Trailmix : Hiking the World </title>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,300italic,700' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Merriweather:400,700,300,900' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,600,700' rel='stylesheet' type='text/css'>
 </head>
 <body>
+  {{> overlay}}
   <div class='navbar navbar-fixed-top'>
     <div class='navbar-inner'>
       <div class='container-fluid'>
@@ -13,14 +17,13 @@
       </div>
     </div>
   </div>
-  <div class='container-fluid'>
-    <div class='row-fluid'>
-      <div class='span4'>
-        {{> sideBar }}
-      </div>
-      <div class='span8'>
-        {{> mapView }}
-      </div>
+  <div class='content-wrapper'>
+    <div class='map-wrapper'>
+      {{> mapView}}
+      <div class='map-shadow'></div>
+    </div>
+    <div class='sidebar'>
+      {{> sideBar}}
     </div>
   </div>
   {{> modals}}

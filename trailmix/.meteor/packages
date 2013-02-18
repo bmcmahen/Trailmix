@@ -7,7 +7,6 @@ insecure
 preserve-inputs
 jquery
 underscore
-bootstrap
 http
 stylus
 accounts-base

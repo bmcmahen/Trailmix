@@ -1,0 +1,70 @@
+@import 'mixins'
+@import 'nib'
+@import 'variables'
+
+// TABS AND PILLS
+// -------------
+
+// Common styles
+.nav-tabs,
+.nav-pills {
+  clearfix();
+}
+.nav-tabs > li,
+.nav-pills > li {
+  float: left;
+}
+.nav-tabs > li > a,
+.nav-pills > li > a {
+  padding-right: 12px;
+  padding-left: 12px;
+  margin-right: 2px;
+  line-height: 14px; // keeps the overall height an even number
+}
+
+// TABS
+// ----
+
+// Give the tabs something to sit on
+.nav-tabs {
+  border-bottom: 1px solid #ddd;
+}
+// Make the list-items overlay the bottom border
+.nav-tabs > li {
+  margin-bottom: -1px;
+}
+// Actual tabs (as links)
+.nav-tabs > li > a {
+  padding-top: 7px;
+  padding-bottom: 5px;
+  line-height: $baseLineHeight;
+  cursor pointer
+  border-radius 2px 2px 0 0
+  &:hover {
+    border-color: $grayLighter $grayLighter #ddd;
+    background: #ddd
+    border-bottom 1px solid #ddd
+  }
+}
+// Active state, and it's :hover to override normal :hover
+.nav-tabs > .active > a,
+.nav-tabs > .active > a:hover {
+  color: $gray;
+  background-color: $bodyBackground;
+  border: 1px solid #ddd;
+  border-bottom-color: transparent;
+  cursor: default;
+}
+
+ul.nav-tabs
+  padding-left 0
+
+  & li a.active
+    border 1px solid #ddd
+    border-bottom 1px solid white
+    border-top 1px solid #ddd !important
+    background white
+
+.tab-content
+  background white
+  padding 15px

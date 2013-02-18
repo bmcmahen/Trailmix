@@ -2,7 +2,7 @@
 
 #map
   width 100%
-  min-height 400px
+  height 100%
   z-index 500
 
 .editing .leaflet-marker-icon.leaflet-clickable
@@ -20,3 +20,13 @@
   box-shadow: inset 10px 10px 20px rgba(0,0,0,0.3)
   transition-property opacity
   transition-duration 0.5s
+
+.leaflet-clickable:hover
+  stroke black
+
+.leaflet-marker-icon.leaflet-clickable
+  border 5px solid transparent
+  border-radius 15px
+
+  &:hover
+    border-color black

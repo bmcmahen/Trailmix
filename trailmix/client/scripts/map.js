@@ -1,10 +1,13 @@
 (function(trailmix){
 
   /**
+   * 
    * MapView Prototype
+   *
+   * Controls Interaction between Leaflet and Meteor
    * 
    */
-  
+
   var MapView = function(map){
     this.$el = $('#map');
     this.map = map || new L.Map('map', {
@@ -14,13 +17,13 @@
     }); 
     this.features = L.featureGroup().addTo(this.map);
     this.idToFeatures = {}; 
+
     this.resizeMap(); 
   }
 
   _.extend(MapView.prototype, {
 
     resizeMap: function(){
-      this.$el.height($(window).height() - 80);
       this.map.invalidateSize(true);
       return this; 
     },
@@ -28,56 +31,102 @@
     // When clicked, highlight the feature in the DOM
     // Maybe change its color to indicate that it's clicked?
     onMarkerClick: function(e) {
-      var feature = e.target; 
+      Session.set('selectedFeature', e.target._id);
+      this.focusListElement(e);
     },
 
     // When clicked, highlight the feature in the DOM
     onLineStringClick: function(e){
-      var feature = e.target; 
+      Session.set('selectedFeature', e.target._id);
+      this.focusListElement(e);
       // if in splice mode
       // feature.spliceLatLngs()
       // https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Array/splice
     },
 
+    // If we are looking at our features pane, scroll to the 
+    // selected element. 
+    focusListElement: function(e){
+      if (Session.equals('tabView', 'features') && Session.get('isEditing')) {
+        var $container = $('#edit-tabs-content')
+          , $target = $('#' + e.target._id);
+
+        $container.animate({
+          scrollTop: $target.offset().top - $container.offset().top + $container.scrollTop()
+        }, 500);
+      }
+    },
+
+    // When a marker has been dragged into a spot, save it. 
     onDragEnd: function(e) {
       var feature = e.target
         , latLng = feature.getLatLng(); 
+
       Features.update({_id: feature._id}, {'$set' : {
         'geometry.coordinates' : [latLng.lat, latLng.lng]
         }
       });
+
     },
 
-    // Enable marker dragging in edit mode
-    enableMarkerDragging: function(){
-      this.features.eachLayer(function(layer){
-        layer.dragging && layer.dragging.enable(); 
-      });
-      return this; 
+    highlightFeature: function(id){
+      var feature = this.idToFeatures[id];
+      // Do we need a separate function for polylines?
+      this.map.panTo(feature.getLatLng());
     },
 
-    // Disable marker dragging in edit mode
-    disableMarkerDragging: function(){
-      this.features.eachLayer(function(layer){
-        layer.dragging && layer.dragging.disable(); 
-      });
-      return this; 
+    // Edit a given marker
+    editMarker: function(feature){
+      feature.dragging.enable();
     },
 
-    enablePolylineEditing: function(){
-      this.features.eachLayer(function(layer){
-        layer.editing && layer.editing.enable();
-      });
-      return this;
+    // Disable editing a given marker
+    disableEditMarker: function(feature){
+      feature.dragging.disable(); 
     },
 
-    disablePolylineEditing: function(){
-      this.features.eachLayer(function(layer){
-        layer.editing && layer.editing.disable();
-      });
-      return this; 
+    // Edit a given polyline
+    editPolyline: function(feature){
+      feature.editing.enable();
+      this.map.fitBounds(feature.getBounds());
     },
 
+    // Disable editing a given polyline
+    disableEditPolyline: function(feature){
+      feature.editing.disable();
+    },
+
+    // Determine which feature type, and set that feature
+    // into the correct editing mode. 
+    editFeature: function(feature){
+      var el = this.idToFeatures[feature._id]
+        , type = feature.geometry.type;
+
+      if (this.currentlyEditing)
+        this.disableEditFeature();
+
+      this.currentlyEditing = feature; 
+
+      Session.set('selectedFeature', feature._id);
+      type === 'Point' 
+        ? this.editMarker(el) 
+        : this.editPolyline(el);
+    },
+
+    // Disable editing mode for the currently edited feature.
+    disableEditFeature: function(){
+      var feature = this.currentlyEditing
+        , el = this.idToFeatures[feature._id]
+        , type = feature.geometry.type;
+
+      delete this.currentlyEditing; 
+
+      type == 'Point'
+        ? this.disableEditMarker(el)
+        : this.disableEditPolyline(el);
+    },
+
+    // Determine which icon should be applied to the feature
     determineIcon: function(feature){
       var iconProperties = { iconUrl: '/map_icons/marker-icon.png' }
       switch(feature.properties.sym.toLowerCase()){
@@ -125,6 +174,7 @@
     // This should only be done when converting GPX to GeoJSON
     // so that we can store the simplified data-set into the database.
     // Let Leaflet handle the drawing. 
+    
     simplifyPolyline: function(coordinates){
 
       // Convert each feature into a point.
@@ -146,6 +196,7 @@
 
     // Create Leaflet features from JSON and add them to 
     // the layerGroup object and our id-to-features hash. 
+  
     addFeature: function(feature) {
       var el, geom = feature.geometry; 
 
@@ -160,7 +211,7 @@
         
         case 'LineString':
           el = L.polyline(geom.coordinates, {
-            color: 'blue',
+            color: 'rgb(33, 47, 151)',
             opacity: 1,
             weight: 2.5,
             dashArray: '8, 5'
@@ -228,15 +279,9 @@
     // Toggle the edit-mode of the map. 
     toggleEditing: function(){
       if (Session.get('isEditing')) {
-        this
-          .enableMarkerDragging()
-          .enablePolylineEditing()
-          .$el.addClass('editing');
+        this.$el.addClass('editing');
       } else {
-        this
-          .disableMarkerDragging()
-          .disablePolylineEditing()
-          .$el.removeClass('editing');
+        this.$el.removeClass('editing');
       }
     }
 
@@ -301,13 +346,11 @@ function resizeMap(){
           if (! _.isEqual(newDocument, oldDocument)) {
             console.log('we need to update this', newDocument, oldDocument);
           }
-          
         },
         removed: function(oldDocument) {
           trailMap.removeFeature(oldDocument);
         }
       });
-
     });
 
    

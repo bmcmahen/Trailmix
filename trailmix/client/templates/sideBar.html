@@ -1,51 +1,12 @@
 <template name='sideBar'>
   {{#if isEditing}}
-    {{#with trail}}
-    <h3> {{this.name}} </h3>
-    {{/with}}
-
-    <ul id='edit-tabs' class='nav nav-tabs'>
-      <li class='active'><a href='#trail' data-toggle='tab'>Trail</a></li>
-      <li><a href='#features' data-toggle='tab'>Features</a></li>
-    </ul>
-
-    <div id='edit-tabs-content' class='tab-content'>
-      <div class='tab-pane fade in active' id='trail'>
-        {{#with trail}}
-        <form id='trail-info'>
-          <input class='name' type='text' placeholder='Name' value='{{this.name}}'>
-          <textarea class='description'>{{this.description}}</textarea>
-          <input type='submit' class='btn btn-primary'>
-        </form>
-        {{/with}}
-      </div>
-      <div class='tab-pane fade' id='features'>  
-        <a class='btn'>Add Point</a>
-        <a class='btn'>Add Line</a>
-        <div id='features'>
-
-          <ul>
-            {{#each features}}
-              {{>feature}}
-            {{/each}}
-          </ul>
-          
-        </div>
-      </div>
-    </div>
-
-    <button class='btn finish-editing'>Finish Editing</button>
+    {{>editSidebar}}
   {{else}}
     {{#with trail}}
-      <h3> {{this.name}} </h3>
+      <h2> {{this.name}} </h2>
       <p> {{this.description}} </p>
       <button class='edit-trail'>Edit</button>
     {{/with}}
   {{/if}}
 </template>
 
-<template name='feature'>
-  <li> {{this.properties.name}} - {{this.geometry.type}} -
-  <button class='delete-feature'>Delete </button>
-  </li>
-</template>
