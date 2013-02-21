@@ -19,9 +19,11 @@ MapBounds = new Meteor.Collection(null);
  * Subscriptions
  */
 
+// Trails should include those within our 'bounds'
+// & those within our Favourites/
 Meteor.subscribe('trails');
 
-Meteor.autosubscribe(function () {
+Meteor.autorun(function () {
   Meteor.subscribe('features', Session.get('currentTrail'));
 });
 
@@ -32,3 +34,4 @@ Meteor.autosubscribe(function () {
 Session.set('currentTrail', null);
 Session.set('isEditing', false);
 Session.set('selectedFeature', null);
+Session.set('mapView', 'browse');

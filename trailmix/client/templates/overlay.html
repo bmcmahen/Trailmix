@@ -4,16 +4,12 @@
       <div class='cover'></div>
       <div id='panel' class='panel wrapper'>
 
-        {{#if newVideo}}
-          {{>newVideo}}
+        {{#if newTrail}}
+          {{>newTrail}}
         {{/if}}
 
         {{#if viewLibrary}}
           {{>viewLibrary}}
-        {{/if}}
-
-        {{#if loginForm}}
-          {{>loginForm}}
         {{/if}}
 
       </div>
@@ -21,3 +17,39 @@
   {{/if}}
 </template>
 
+
+<template name='newTrail'>
+  <header>
+    <h5> Create a Trail </h5>
+    <button class='close'>×</button>
+  </header>
+  <div class='panel-body'>
+
+  </div>
+</template>
+
+<template name='viewLibrary'>
+  <header>
+    <h5> Select a Trail </h5>
+    <button class='close'>×</button>
+  </header>
+  <div class='panel-body'>
+    <div class='wrapper-inset'>
+      <ul class='nav nav-list'>
+        {{#each trails}}
+          {{> trailList}}
+        {{else}}
+          <p> No Trails</p>
+        {{/each}}
+      </ul>
+    </div>
+  </div>
+</template>
+
+<template name='trailList'>
+  <li>
+    <a href='#' class='trail-name'>
+      {{name}}
+    </a>
+  </li>
+</template>

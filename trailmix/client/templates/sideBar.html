@@ -1,4 +1,18 @@
 <template name='sideBar'>
+  {{#if browsingView}}
+    {{>browseView}}
+  {{/if}}
+
+  {{#if detailView}}
+    {{>detailView}}
+  {{/if}}
+</template>
+
+<template name='browseView'>
+  <p> browsing </p>
+</template>
+
+<template name='detailView'>
   {{#if isEditing}}
     {{>editSidebar}}
   {{else}}
