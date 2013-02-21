@@ -118,6 +118,14 @@
     'click .features' : function(){
       Session.set('tabView', 'features');
       return false; 
+    },
+
+    'click #add-line' : function(){
+      Trailmix.map.addDrawingControls(); 
+    },
+
+    'click #add-point' : function(){
+      console.log('add point');
     }
 
   });

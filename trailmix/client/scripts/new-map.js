@@ -1,0 +1,280 @@
+Trailmix.MapView = (function(){
+  
+  // Meteor Observer -> Leaflet Controller/View
+  // 
+  // Keeps a dict of _id to Feature elements, which we can
+  // use to map objects to their elements. Each element also
+  // is built with a _id attribute, allowing us to go back the other way.
+  var MapView = function(){
+    this.map = new L.Map('map', {
+      center: new L.LatLng(53.1103, -119.1567),
+      zoom: 10,
+      layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png'),
+      maxZoom: 15
+    });
+    L.control.scale().addTo(this.map);
+    this.features = L.featureGroup().addTo(this.map);
+    this.idToFeatures = {};
+  };
+
+  _.extend(MapView.prototype, {
+
+    // Different Modes
+    // 
+    // We can either be in 'Trail Detail Mode' or 'Trail Browse Mode'. These
+    // functions help us swap between the two. 
+    enterTrailDetailMode: function(){
+      Session.set('mapView', 'detail');
+      this.detailMode = true;
+      this.removeAllFeatures();
+      // Unbind TrailBrowse Events
+      this.map
+        .off('zoomend')
+        .off('dragend')
+        .off('locationfound');
+      this.observeTrailFeatures();
+    },
+
+    enterTrailBrowseMode: function(){
+      // Either acquire the currentLocation of the user, or, if
+      // they have navigated to another location, remember that, and 
+      // zoom back to that location. 
+      Session.set('mapView', 'browse');
+      this.detailMode = false; 
+      this.removeAllFeatures();
+      // Bind TrailBrowse Events
+      this.map
+        .on('zoomend', _.bind(this.onViewChange, this))
+        .on('dragend', _.bind(this.onViewChange, this))
+        .on('locationfound', _.bind(this.onLocationFound, this));
+
+      if (this.browseLocation) {
+        this.browseZoom = this.browseZoom || 12;
+        this.map.setView(this.browseLocation, this.browseZoom);
+      } else {
+        this.map.locate();
+      } 
+
+      this.observeTrails();
+    },
+
+    // Observe
+    // 
+    // When in 'Trail Detail Mode' we want to observe the selected trail.
+    observeTrailFeatures: function(){
+      var _this = this; 
+      if (this.autorun)
+        this.autorun.stop(); 
+
+      this.autorun = Meteor.autorun(function() {
+        if (_this.handle){
+          _this.handle.stop();
+          _this.removeAllFeatures();
+        }
+
+        var query = Features.find({
+          trail: Session.get('currentTrail')
+        });
+        
+        _this.handle = query.observe({
+          added: function(doc) { 
+            _this.addFeature(doc).delayFitBounds();
+          },
+          changed: function(newDocument, i, oldDocument) {
+            if (!_.isEqual(newDocument, oldDocument)) {
+              console.log('we need update this document');
+            }
+          },
+          removed: function(oldDocument) { 
+            _this.removeFeature(oldDocument); 
+          }
+        });
+
+      })
+    },
+
+    // When in 'Trail Browse Mode' we want to observe our
+    // Trail subscription.
+    observeTrails: function(){
+      var _this = this; 
+      if (this.autorun)
+        this.autorun.stop();
+
+      this.autorun = Meteor.autorun(function() {
+        if (_this.handle){
+          _this.handle.stop();
+          _this.removeAllFeatures();
+        }
+
+        var query = Trails.find();
+        _this.handle = query.observe({
+          added: function(doc) { 
+            _this.addTrail(doc); 
+          },
+          changed: function(newDoc, i, oldDoc) {
+            console.log('we need to update position of trail');
+          },
+          removed: function(oldDoc){ 
+            _this.removeTrail(oldDoc); 
+          }
+        });
+      });
+    },
+
+    // Events
+    // 
+    // Polyline has been created
+    onPolylineCreated: function(e){
+      var polyline = e.poly; 
+      // Save the Polyline
+    },
+
+    onViewChange: function(e){
+      var bounds = this.map.getBounds();
+      // Update our MapBounds Collection with these new bounds. 
+      this.browseLocation = this.map.getCenter();
+      this.browseZoom = this.map.getZoom();
+    },
+
+    onLocationFound: function(e){  
+      this.map.setView(e.latlng, 12);
+    },
+
+    // Handle Trail Detail Observe -> Map data synchronization.
+    // 
+    addFeature: function(doc){
+      var newFeature = new Trailmix.Feature(doc, { map : this });
+      this.idToFeatures[doc._id] = newFeature;
+      this.features.addLayer(newFeature.el);
+      return this; 
+    },
+
+    // Remove Feature & Remove Trail are basically the same, except
+    // for 'features' contains a different kind of object. I should
+    // eventually make this perform the same, which would allow 
+    // better code reuse. 
+    removeFeature: function(doc){
+      var feature = this.idToFeatures[doc._id];
+      if (feature) {
+        this.features.removeLayer(feature.el);
+        delete this.idToFeatures[doc._id];
+      }
+      return this;
+    },
+
+    updateFeature: function(doc){
+      this.removeFeature(doc).addFeature(doc);
+    },
+
+    removeAllFeatures: function(){
+      if (this.features && this.idToFeatures){
+        this.features.clearLayers();
+        this.idToFeatures = {};
+      }
+    },
+
+    // Handle Trail Browse Observe -> Map data synchro
+    // 
+    addTrail: function(doc){
+      if (doc && doc.coordinates){
+        var newTrail = new L.Marker(doc.coordinates);
+        this.idToFeatures[doc._id] = newTrail;
+        this.features.addLayer(newTrail);
+      }
+      return this; 
+    },
+
+    removeTrail: function(doc){
+      console.log('remove trail', doc);
+      var trail = this.idToFeatures[doc._id];
+      if (trail) {
+        this.features.removeLayer(trail);
+        delete this.idToFeatures[doc._id];
+      }
+      return this;
+    },
+
+    // Basic map functions
+    // 
+    fitBounds: function(){
+      if (this.features) this.map.fitBounds(this.features.getBounds());
+    },
+
+    delayFitBounds: function(){
+      this.timer && clearInterval(this.timer);
+      this.timer = setTimeout(_.bind(this.fitBounds, this), 300); 
+    },
+
+    resizeMap: function(){
+      this.map.invalidateSize(true);
+      return this;
+    },
+
+    // XXX also allow adding a marker
+    addDrawingControls: function(){
+      // L.Draw.Polyline();
+      this.draw = new L.Polyline.Draw(this.map, {title: 'Draw a line.'});
+      this.map.on('draw:poly-created', _.bind(this.onFeatureCreated, this));
+      this.draw.on('activated', function(e){
+        console.log('drawing controls activated');
+      });
+      this.map.on('drawing', function(){
+        console.log('drawing is happening');
+      });
+      this.draw.enable();
+    },
+
+    highlightFeature: function(id){
+      var highlighted = this.currentlyHightlighted;
+      if (highlighted) highlighted.disableHighlight();
+      this.currentlyHightlighted = this.idToFeatures[id].highlight();
+    },
+
+    // Editing States
+    // 
+    editFeature: function(doc) {
+      var el = this.idToFeatures[doc._id];
+
+      if (this.currentlyEditing)
+        this.currentlyEditing.disableEditing();
+
+      this.currentlyEditing = el; 
+      el.enableEditing(); 
+    },
+
+    disableEditFeature: function(doc) {
+      this.idToFeatures[doc._id].disableEditing();
+      delete this.currentlyEditing;
+    },
+
+    onFeatureCreated: function(e){
+      console.log(e);
+    },
+
+    // We use  some of Leaflet's helper functions to simplify any set
+    // of coordinates we have. We need to project these coordinates
+    // into LatLng objects, and then into Points. We simplify the Points,
+    // and then convert them back to LatLngs. We then return the
+    // array of LatLngs, to be saved in the database.  
+    simplifyPolyline: function(coordinates){
+      // Convert each feature into a point.
+      var pts = _.map(coordinates, function(latlng, i){
+        var l = new L.LatLng(latlng[0], latlng[1]);
+        return this.map.options.crs.latLngToPoint(l, 15)._round();
+      }, this);
+
+      // Simplify the points.
+      var simplified = L.LineUtil.simplify(pts, 1.8);
+
+      // Convert back into latlngs.
+      return _.map(simplified, function(pt, i){
+        var latlng = this.map.options.crs.pointToLatLng(pt, 15);
+        return [latlng.lat, latlng.lng];
+      }, this);
+    }
+  });
+
+  return MapView;
+
+})();
+
