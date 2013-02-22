@@ -9,7 +9,19 @@
 </template>
 
 <template name='browseView'>
-  <p> browsing </p>
+  <ul>
+    {{#each trail}}
+      {{>browseTrailList}}
+    {{else}}
+      <p> No trails </p>
+    {{/each}}
+  </ul>
+</template>
+
+<template name='browseTrailList'>
+  <li>
+    <a href='#'> {{name}} </a>
+  </li>
 </template>
 
 <template name='detailView'>

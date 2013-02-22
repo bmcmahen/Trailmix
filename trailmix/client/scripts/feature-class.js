@@ -48,7 +48,8 @@
 
     createPolyline: function(){
       return L.polyline(this.coords, this.defaultLineStyle)
-        .on('click', _.bind(this.onFeatureClick, this));
+        .on('click', _.bind(this.onFeatureClick, this))
+        .on('dragend', _.bind(this.onDragEnd, this));
     },
 
     // Determine which icon our Marker should be using. 
@@ -68,8 +69,16 @@
       if (this.type === 'Point') {
         this.el.dragging.enable();
       } else if (this.type === 'LineString') {
+        this.mapClass.map.fitBounds(this.el.getBounds());
         this.el.editing.enable();
-        this.mapClass.map.fitBounds(feature.getBounds());
+        this.el.on('edit', function(e){
+          //this returns the entire polyline that has been
+          //edited, which is fine for 'updates'. For certain
+          //forms of editing, we need to figure out which points
+          //are being clicked, to determine where to split certain
+          //lines. 
+          console.log('hi', e)
+        });
       }
     },
 
@@ -78,7 +87,23 @@
         this.el.dragging.disable();
       } else if (this.type === 'LineString') {
         this.el.editing.disable();
+        this.el.off('edit');
       }
+    },
+
+    // Take two points, and remove every point in between.
+    slicePolyline: function(){
+    },
+
+    // Take one point, and create two Polylines out of them.
+    splitPolyline: function(){
+
+    },
+
+    // Take two polylines (id) and join them. NOTE. This might
+    // be difficult and kinda useless. Polyline cannot overlap. 
+    joinPolyline: function(){
+
     },
 
     // HIGHLIGHTING
@@ -144,7 +169,7 @@
   _.extend(BrowseFeature.prototype, {
     onClick: function(e){
       Session.set('currentTrail', this.doc._id);
-      this.mapClass.enterTrailDetailMode();
+      Session.set('mapView', 'detail');
       // A trail should _always_ have one feature by necessity,
       // which should be the origin point of the trail. This cannot
       // be deleted, but only changed. This ensures that 'fitBounds'

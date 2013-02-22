@@ -85,12 +85,15 @@ Template.newTrail.events({
     var name = t.find('.trail-name').value;
 
     if (name) {
-      var newTrail = Trails.insert({ name : name });
+      var newTrail = Trails.insert({ 
+        name : name,
+        published: false
+      });
       Session.set('currentTrail', newTrail);
+      Session.set('mapView', 'detail');
       Session.set('isEditing', true);
+      Session.set('overlay', null);
       addToFavourites(newTrail);
-      newTrailModal.hide(); 
-
     } else {
       // Validation goes here
       console.log('Do some validation');

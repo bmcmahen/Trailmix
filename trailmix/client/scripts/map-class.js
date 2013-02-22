@@ -29,7 +29,6 @@ Trailmix.MapView = (function(){
       var _this = this; 
       if (this.determineMode) this.determineMode.stop();
       this.determineMode = Meteor.autorun(function(){
-        console.log('how many times am i running?');
         if (Session.equals('mapView', 'detail'))
           _this.enterTrailDetailMode();
         else if (Session.equals('mapView', 'browse'))
@@ -45,8 +44,7 @@ Trailmix.MapView = (function(){
 
       // Unbind TrailBrowse Events
       this.map
-        .off('zoomend')
-        .off('dragend')
+        .off('moveend')
         .off('locationfound');
       this.observeTrailFeatures();
     },
@@ -59,8 +57,7 @@ Trailmix.MapView = (function(){
       this.removeAllFeatures();
       // Bind TrailBrowse Events
       this.map
-        .on('zoomend', _.bind(this.onViewChange, this))
-        .on('dragend', _.bind(this.onViewChange, this))
+        .on('moveend', _.bind(this.onViewChange, this))
         .on('locationfound', _.bind(this.onLocationFound, this));
 
       if (this.browseLocation) {
@@ -95,7 +92,7 @@ Trailmix.MapView = (function(){
           added: function(doc) { 
             _this.addFeature(doc).delayFitBounds();
           },
-          changed: function(newDocument, i, oldDocument) {
+          changed: function(newDocument, oldDocument) {
             if (!_.isEqual(newDocument, oldDocument)) {
               console.log('we need update this document');
             }
@@ -126,7 +123,7 @@ Trailmix.MapView = (function(){
           added: function(doc) { 
             _this.addFeature(doc); 
           },
-          changed: function(newDoc, i, oldDoc) {
+          changed: function(newDoc, oldDoc) {
             console.log('we need to update position of trail');
           },
           removed: function(oldDoc){ 
@@ -138,15 +135,16 @@ Trailmix.MapView = (function(){
 
     // Events
     // 
-    // Polyline has been created
-    onPolylineCreated: function(e){
-      var polyline = e.poly; 
-      // Save the Polyline
-    },
-
     onViewChange: function(e){
-      var bounds = this.map.getBounds();
-      // Update our MapBounds Collection with these new bounds. 
+      var bounds = this.map.getBounds()
+        , boundObject = { 
+            southWest: [bounds._southWest.lat, bounds._southWest.lng],
+            northEast: [bounds._northEast.lat, bounds._northEast.lng] 
+          };
+
+      if (MapBounds.find().count() < 1) MapBounds.insert(boundObject);
+      else MapBounds.update({}, boundObject);
+
       this.browseLocation = this.map.getCenter();
       this.browseZoom = this.map.getZoom();
     },
@@ -255,7 +253,21 @@ Trailmix.MapView = (function(){
     },
 
     onFeatureCreated: function(e){
-      console.log(e);
+      // XXX - it might be easier if I use the {lat: , lng: }
+      // format over the array format. Seems to be the more standard
+      // approach in both leaflet and mongo. 
+      var coordinates = _.map(e.poly.getLatLngs(), function(coords){
+        return [coords.lat, coords.lng];
+      });
+      Features.insert({
+        geometry: {
+          type: 'LineString',
+          coordinates: coordinates
+        },
+        type: 'Feature',
+        trail: Session.get('currentTrail'),
+        properties: {}
+      });
     },
 
     // We use  some of Leaflet's helper functions to simplify any set

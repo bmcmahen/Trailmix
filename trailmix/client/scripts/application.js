@@ -6,32 +6,42 @@ Trailmix = {};
 Features = new Meteor.Collection('features');
 Trails = new Meteor.Collection('trails');
 
-// Our reative model for our  map bounds. It contains two sets
-// of coordinates which are updated by our leaflet map. When
-// an update occurs, our Trail subscription will automatically 
-// update to retrieve the trails that exist within these bounds. 
-// On the server, we will use Mongo's $within to query for the 
-// appropriate trails, and when our subscription updates, so will
-// our leaflet map (via an observer + leaflet controller).
+// Our client-side only reactive model containing our
+// map bounds (southWest, northEast). This is used to update
+// our subscription to the trails that are in the current map
+// bounds. 
 MapBounds = new Meteor.Collection(null);
 
 /**
  * Subscriptions
  */
 
-// Trails should include those within our 'bounds'
-// & those within our Favourites/
-Meteor.subscribe('trails');
-
+// Get trails that are located within our map bounds. 
 Meteor.autorun(function () {
-  Meteor.subscribe('features', Session.get('currentTrail'));
+  Session.set('loading', true);
+  Meteor.subscribe('trails', MapBounds.findOne(), function(){
+    Session.set('loading', false);
+  }); 
+});
+
+// Get the features of our current trail.
+Meteor.autorun(function () {
+  Session.set('loading', true);
+  Meteor.subscribe('features', Session.get('currentTrail'), function(){
+    Session.set('loading', false);
+  });
+});
+
+// Get the current user's favourite trails. 
+Meteor.autorun(function () {
+  Meteor.subscribe('trailFavourites', Meteor.user());
 });
 
 /**
  * Session Variables
  */
 
-Session.set('currentTrail', null);
-Session.set('isEditing', false);
-Session.set('selectedFeature', null);
-Session.set('mapView', 'browse');
+Session.setDefault('currentTrail', null);
+Session.setDefault('isEditing', false);
+Session.setDefault('selectedFeature', null);
+Session.setDefault('mapView', 'browse');
