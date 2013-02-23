@@ -9,8 +9,8 @@ Trailmix.MapView = (function(){
     this.map = new L.Map('map', {
       center: new L.LatLng(53.1103, -119.1567),
       zoom: 10,
-      layers: new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
-      // layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png'),
+      // layers: new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+      layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png'),
       maxZoom: 15
     });
     L.control.scale().addTo(this.map);
@@ -153,13 +153,17 @@ Trailmix.MapView = (function(){
       this.map.setView(e.latlng, 12);
     },
 
-    // Handle Tril Detail Observe -> Map data synchronization.
+    // Handle Observe -> Map data synchronization.
     // 
     addFeature: function(doc){
-      var newFeature = Trailmix.Feature(doc, { map : this });
+      var newFeature = Trailmix.Feature(doc, { map : this })
+        , el = newFeature.el;
+
       if (newFeature) {
         this.idToFeatures[doc._id] = newFeature;
-        this.features.addLayer(newFeature.el);
+        this.features.addLayer(el);
+        if (el._label && el._label.options.noHide)
+          el.showLabel();
       }
       return this; 
     },

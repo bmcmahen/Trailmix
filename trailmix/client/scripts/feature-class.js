@@ -12,8 +12,11 @@
     this.mapClass = options.map; 
     this.type = doc.geometry.type; 
     this.coords = doc.geometry.coordinates;
-    if (doc.properties && doc.properties.sym)
-      this.symbol = doc.properties.sym.toLowerCase();
+    if (doc.properties){
+      this.markerSymbol = doc.properties.markerSymbol;
+      this.markerSize = doc.properties.markerSize;
+      this.name = doc.properties.name;
+    }
    
     // Default Styles
     this.defaultLineStyle = {
@@ -39,9 +42,11 @@
 
     // Create our Marker
     createMarker: function(){
-      return L.marker(this.coords, { icon: this.determineIcon() })
-        .bindPopup('<p>Hello world</p>')
-        .bindLabel('Im a label!')
+      return L.marker(this.coords, { 
+          icon: this.determineIcon(),
+          riseOnHover: true
+        })
+        .bindLabel(this.name, { noHide: true })
         .on('click', _.bind(this.onFeatureClick, this))
         .on('dragend', _.bind(this.onDragEnd, this));
     },
@@ -54,10 +59,15 @@
 
     // Determine which icon our Marker should be using. 
     determineIcon: function(){
-      var iconProperties = { iconUrl: '/map_icons/marker-icon.png' };
-      switch(this.symbol){
+      var iconProperties = { 
+        iconUrl: '/images/icons/circle-12.png',
+        iconSize: [12, 12],
+        labelAnchor: [4, 8]
+      };
+
+      switch(this.markerSymbol){
         case 'trail head' :
-          _.defaults({ iconSize: [40, 90] }, iconProperties);
+          _.defaults({ iconSize: [18, 18] }, iconProperties);
           break;
       }
       return L.icon(iconProperties);

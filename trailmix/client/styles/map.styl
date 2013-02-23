@@ -1,4 +1,5 @@
 @import 'nib'
+@import 'fiddleware/variables'
 
 #map
   width 100%
@@ -21,9 +22,6 @@
   transition-property opacity
   transition-duration 0.5s
 
-.leaflet-clickable:hover
-  stroke black
-
 .leaflet-marker-icon.leaflet-clickable
   border 5px solid transparent
   border-radius 15px
@@ -35,3 +33,26 @@
 .leaflet-div-icon
   background white
   border 1px solid !important
+
+#map .leaflet-popup-content-wrapper
+  border-radius 3px
+  border 1px solid #ccc
+
+#map .leaflet-popup-tip
+  width 10px
+  height 10px
+  background rgb(231, 231, 231)
+
+#map .leaflet-label
+  background rgba(255,255,255, 0.9)
+  border none
+  color #333
+  font 11px/20px $bold-font-family
+  border-radius 3px
+  font-weight bold
+
+#map .leaflet-label:before
+  border-right none
+  border-top none
+  border-bottom none
+  display none
