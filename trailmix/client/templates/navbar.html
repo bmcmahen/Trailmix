@@ -1,0 +1,33 @@
+<template name='navLinks'>
+  {{#if currentUser}}
+    <li> <a id='view-my-trails' href='#'>My Trails</a> </li>
+    <li> <a id='create-new-trail' href='#'>Create Trail</a> </li>
+  {{/if}}
+    <li> {{loginButtons align='right'}} </li>
+</template>
+
+<template name='navigation'>
+  <div class='navbar navbar-fixed-top'>
+    <div class='navbar-inner'>
+      <div class='container-fluid'>
+        <img class='logo pull-left' src='/images/logo.png'>
+        <a class='brand' href='#'>
+          trailmix
+        </a>
+        <ul class='nav pull-right'>
+          {{#isolate}}
+            {{#if loading}}
+              {{>loading}}
+            {{/if}}
+          {{/isolate}}
+         {{> navLinks}}
+        </ul>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template name='loading'>
+  <li id='loading-wrapper'></li>
+</template>
+
