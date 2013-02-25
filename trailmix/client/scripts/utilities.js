@@ -74,10 +74,11 @@
             , newCoords = simplify(feature.geometry.coordinates);
 
           feature.geometry.coordinates = newCoords; 
+          feature.properties.markerSymbol = 'lineString';
         }
         features.push(feature);
         currentTag = feature = null;
-        return
+        return;
       }
       // If our currentTag has a parent, then
       // set the currentTag to be that parent. 
@@ -89,8 +90,8 @@
     };
 
     parser.ontext = function(text) {
-      if (!currentTag || !text) return
-      if (!_.contains(desiredProperties, currentTag.name)) return
+      if (!currentTag || !text) return;
+      if (!_.contains(desiredProperties, currentTag.name)) return;
       // Add text and their tags to the properites object
       if (feature) {
         var txt = {};

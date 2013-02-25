@@ -31,6 +31,10 @@
 
     descriptionTab : function() {
       return Session.equals('tabView', 'description');
+    },
+
+    addFeaturesTab : function() {
+      return Session.equals('tabView', 'addFeatures');
     }
 
   });
@@ -120,12 +124,121 @@
       return false; 
     },
 
+    'click .add-features' : function(){
+      Session.set('tabView', 'addFeatures');
+      return false;
+    },
+
     'click #add-line' : function(){
       Trailmix.map.addDrawingControls(); 
+      return false;
     },
 
     'click #add-point' : function(){
       console.log('add point');
+      return false;
+    },
+
+    // Trigger autocomplete
+    'input textarea' : function(e){
+
+
+      this.endTagging = function(){
+        delete this.start;
+        delete this.end; 
+        this.tagging = false;
+        console.log('end tagging');
+        Session.set('taggingQuery', null);
+      };
+
+      // Behaviour is different when
+      // (1) we are starting at the beginning of the textarea. Our index
+      // is one ahead.
+      // (2) we place an @ after the fact, directly before a letter. 
+      // 
+      // Build for the typical user interaction: 
+      // - space + @
+
+      if (this.tagging){
+
+        var currentPos = this.textarea.selectionStart;
+
+        if ((currentPos - this.start) < 0){
+          this.endTagging();
+          return;
+        }
+
+        if (typeof this.start === 'undefined')
+          this.start = currentPos;
+
+        if (this.start === 0)
+          this.textarea.selectionStart = 1; 
+        else if (this.textarea.value.charAt(this.start) === '@') {
+          this.start += 1; 
+        }
+
+        // if we've started inputting text before the @ or after our
+        // end point (by more than one space) then we assume that
+        // tagging has finished. 
+        if (currentPos > this.end + 1 || currentPos < this.start) {
+          this.endTagging();
+          return;
+        }
+
+        // if we don't have an end position, or our currentPos is greater
+        // than our endPos, we set our endPos to our currentPos
+        if (!this.end || currentPos > this.end) {
+          this.end = this.textarea.selectionStart + 1; 
+        }
+
+        // If we are selecting/deleting part of our tag, update our
+        // end position accordingly. 
+        if (this.selectionLength > 0){
+          if (this.key === 8 || this.key === 46) {
+            if (this.end - selectionLength === 0) this.endTagging();
+            this.end -= selectionLength;
+          }
+          else {
+            if ((this.end - (selectionLength - 1)) <= 1) this.endTagging();
+            this.end -= selectionLength - 1;
+          }
+        } 
+        // otherwise, if our currentPosition is less than our endPos and we are
+        // entering text, then we need to increment our endPos
+        else if (currentPos < this.end && currentPos > this.start) {
+          // unless we are deleting, and then we need to decrement our endPos
+          if (this.key === 8 || this.key === 46) this.end -= 1;
+          else if (currentPos + 1 < this.end){
+            console.log(currentPos, this.end);
+            this.end += 1;
+          }  
+        }
+
+        var query = this.textarea.value.substring(this.start, this.end + 1);
+        console.log(query);
+        Session.set('taggingQuery', this.query);
+      }
+
+    },
+
+    'keydown textarea' : function(e){
+      this.key = e.which; 
+      this.selectionLength = null;
+      // If tagging, record our selection length 
+      if (!this.textarea)
+        this.textarea = document.getElementById('trail-description');
+
+      if (this.tagging){
+        this.selectionLength = this.textarea.selectionEnd - this.textarea.selectionStart; 
+      }
+
+      // @symbol
+      if (e.shiftKey && e.which === 50){
+        if (this.tagging) this.endTagging();
+        this.tagging = true; 
+      }
+
+      
     }
 
   });
@@ -168,6 +281,10 @@
     }
 
   }); 
+
+  Template.feature.preserve({
+    'img[id]': function(node) { return node.id; }
+  });
 
 
 }).call(this);

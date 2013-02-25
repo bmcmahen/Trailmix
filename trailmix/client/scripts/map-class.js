@@ -9,9 +9,10 @@ Trailmix.MapView = (function(){
     this.map = new L.Map('map', {
       center: new L.LatLng(53.1103, -119.1567),
       zoom: 10,
-      // layers: new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
-      layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png'),
-      maxZoom: 15
+      layers: new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+      // layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png'),
+      maxZoom: 15,
+      attributionControl: false
     });
     L.control.scale().addTo(this.map);
     this.features = L.featureGroup().addTo(this.map);
@@ -75,18 +76,18 @@ Trailmix.MapView = (function(){
     // When in 'Trail Detail Mode' we want to observe the selected trail.
     observeTrailFeatures: function(){
       var _this = this; 
-      if (this.autorun)
-        this.autorun.stop(); 
+      
+      if (this.autorun) this.autorun.stop(); 
 
       this.autorun = Meteor.autorun(function() {
+        var query = Features.find({ 
+          trail: Session.get('currentTrail') 
+        });
+
         if (_this.handle){
           _this.handle.stop();
           _this.removeAllFeatures();
         }
-
-        var query = Features.find({
-          trail: Session.get('currentTrail')
-        });
         
         _this.handle = query.observe({
           added: function(doc) { 
@@ -109,16 +110,16 @@ Trailmix.MapView = (function(){
     // Trail subscription.
     observeTrails: function(){
       var _this = this; 
-      if (this.autorun)
-        this.autorun.stop();
+      if (this.autorun) this.autorun.stop();
 
       this.autorun = Meteor.autorun(function() {
+        var query = Trails.find();
+
         if (_this.handle){
           _this.handle.stop();
           _this.removeAllFeatures();
         }
 
-        var query = Trails.find();
         _this.handle = query.observe({
           added: function(doc) { 
             _this.addFeature(doc); 
@@ -157,7 +158,12 @@ Trailmix.MapView = (function(){
     // 
     addFeature: function(doc){
       var newFeature = Trailmix.Feature(doc, { map : this })
-        , el = newFeature.el;
+        , el;
+
+      if (!newFeature)
+        return;
+
+      el = newFeature.el;
 
       if (newFeature) {
         this.idToFeatures[doc._id] = newFeature;

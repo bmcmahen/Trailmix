@@ -1,5 +1,15 @@
  Trailmix.Feature = (function(){
 
+  // Marker Icons
+  // 
+  // doc.properties.markerSymbol = 'parking'
+  // doc.properties.markerSize = 'medium' (small, medium, large)
+  // 
+  // parking-18.png
+
+
+
+
   // Feature API
   // Either creates a 'BrowseFeature' or 'DetailFeature' depending
   // on our document type. 
@@ -62,7 +72,7 @@
       var iconProperties = { 
         iconUrl: '/images/icons/circle-12.png',
         iconSize: [12, 12],
-        labelAnchor: [4, 8]
+        labelAnchor: [0, 8]
       };
 
       switch(this.markerSymbol){
@@ -160,7 +170,7 @@
     focusListElement: function(id){
       if (Session.equals('tabView', 'features') && Session.get('isEditing')) {
         var $container = $('#edit-tabs-content')
-          , $target = $('#' + id);
+          , $target = $('#' + id).parent();
 
         $container.animate({
           scrollTop: $target.offset().top - $container.offset().top + $container.scrollTop()

@@ -2,8 +2,9 @@
     {{#isolate}}
       {{#with trail}}
       <div class='meta-wrapper'>
-      <h2> {{this.name}} </h2>
-    </div>
+        <h2> {{this.name}} </h2>
+        <button class='btn btn-green publish'>Publish</button>
+      </div>
       {{/with}}
     {{/isolate}}
     <ul id='edit-tabs' class='nav nav-tabs'>
@@ -13,16 +14,15 @@
       <li>
         <a class='features {{#if featuresTab}} active {{/if}}'>Features</a>
       </li>
+      <li>
+        <a class='add-features {{#if addFeaturesTab}} active {{/if}}'>Add Features</a>
+      </li>
     </ul>
 
     <div id='edit-tabs-content' class='tab-content'>
 
       {{#if featuresTab}}
       <div class='tab-pane' id='features'> 
-        <div class='tab-controls'> 
-          <button id='add-point' class='btn btn-pink'>Add Point</button>
-          <button id='add-line' class='btn btn-green'>Add Line</button>
-        </div>
         <div id='features'>
           <ul>
             {{#each features}}
@@ -35,25 +35,57 @@
 
       {{#if descriptionTab}}
       <div class='tab-pane'>
-        <p> various text fields </p>
+        <div class='sidebar-wrapper'>
+          <form id='trail-metadata'>
+            <label> Name
+              <input type='text' class='trail-name large'>
+            </label>
+            <label> Description
+              <textarea id='trail-description' class='trail-description'></textarea>
+            </label>
+            {{>autoComplete}}
+            <input type='submit' class='btn btn-blue large' value='Save'>
+          </form>
+        </div>
+      </div>
+      {{/if}}
+
+      {{#if addFeaturesTab}}
+      <div class='tab-pane'>
+         <div class='tab-controls'> 
+          <button id='add-point' class='btn btn-pink'>Add Point</button>
+          <button id='add-line' class='btn btn-green'>Add Line</button>
+        </div>
       </div>
       {{/if}}
 
     </div>
 </template>
 
+<template name='autoComplete'>
+  {{#if tagging}}
+    <ul id='autocomplete'>
+      {{#each tagResult}}
+        {{#isolate}}
+          <li> {{name}} </li>
+        {{/isolate}}
+      {{/each}}
+    <ul>
+  {{/if}}
+</template>
 
 <template name='feature'>
-  <li id='{{this._id}}' class='feature-instance {{#if selected}} selected {{/if}}'> 
+  <li class='feature-instance {{#if selected}} selected {{/if}}'> 
     <div class='type'>
-      {{this.geometry.type}}
+      {{#if this.properties.markerSymbol}}
+        <img id='{{this._id}}' src='/images/icons/{{properties.markerSymbol}}-24.png'>
+      {{else}}
+        <img id='{{this._id}}' src='/images/icons/marker-24.png'>
+      {{/if}}
     </div>
     <div class='name'>
       {{this.properties.name}}
     </div>
-    <div class='controls'>
-      <button class='btn small delete-feature'> Delete </button>
-      <button class='btn small edit-feature'> Edit </button>
-    </div>
+    <i class='icon-chevron-right'></i>
   </li>
 </template>
