@@ -1,10 +1,6 @@
 Trailmix.MapView = (function(){
-  
-  // Meteor Observer -> Leaflet Controller/View
-  // 
-  // Keeps a dict of _id to Feature elements, which we can
-  // use to map objects to their elements. Each element also
-  // is built with a _id attribute, allowing us to go back the other way.
+
+  // Meteor Observer -> Leaflet View
   var MapView = function(){
     this.map = new L.Map('map', {
       center: new L.LatLng(53.1103, -119.1567),
@@ -17,167 +13,68 @@ Trailmix.MapView = (function(){
     L.control.scale().addTo(this.map);
     this.features = L.featureGroup().addTo(this.map);
     this.idToFeatures = {};
+    this.modes = {
+      detail : new Trailmix.modes.Detail(this),
+      browse : new Trailmix.modes.Browse(this)
+    };
     this.determineMapMode();
   };
 
   _.extend(MapView.prototype, {
 
-    // Different Modes
-    // 
-    // MapView is controlled by Session variable 'mapView'
-    // and can either be 'detail' or 'browse'.
+    // Install/bind our behaviors
+    install: function(behavior){
+      behavior.on();
+    },
+
+    // Remove/bind our behaviors
+    uninstall: function(behavior) {
+      behavior.off();
+    },
+
+    // Responds to Session.get('mapView') and either enters
+    // detailMode or browseMode.
     determineMapMode: function(){
-      var _this = this; 
+      var _this = this;
       if (this.determineMode) this.determineMode.stop();
       this.determineMode = Meteor.autorun(function(){
         if (Session.equals('mapView', 'detail'))
-          _this.enterTrailDetailMode();
+          _this.enterMode('detail');
         else if (Session.equals('mapView', 'browse'))
-          _this.enterTrailBrowseMode();
-      });
-    },
-    // 
-    // We can either be in 'Trail Detail Mode' or 'Trail Browse Mode'. These
-    // functions help us swap between the two. 
-    enterTrailDetailMode: function(){
-      this.detailMode = true;
-      this.removeAllFeatures();
-
-      // Unbind TrailBrowse Events
-      this.map
-        .off('moveend')
-        .off('locationfound');
-      this.observeTrailFeatures();
-    },
-
-    enterTrailBrowseMode: function(){
-      // Either acquire the currentLocation of the user, or, if
-      // they have navigated to another location, remember that, and 
-      // zoom back to that location. 
-      this.detailMode = false; 
-      this.removeAllFeatures();
-      // Bind TrailBrowse Events
-      this.map
-        .on('moveend', _.bind(this.onViewChange, this))
-        .on('locationfound', _.bind(this.onLocationFound, this));
-
-      if (this.browseLocation) {
-        this.browseZoom = this.browseZoom || 12;
-        this.map.setView(this.browseLocation, this.browseZoom);
-      } else {
-        this.map.locate();
-      } 
-
-      this.observeTrails();
-    },
-
-    // Observe
-    // 
-    // When in 'Trail Detail Mode' we want to observe the selected trail.
-    observeTrailFeatures: function(){
-      var _this = this; 
-      
-      if (this.autorun) this.autorun.stop(); 
-
-      this.autorun = Meteor.autorun(function() {
-        var query = Features.find({ 
-          trail: Session.get('currentTrail') 
-        });
-
-        if (_this.handle){
-          _this.handle.stop();
-          _this.removeAllFeatures();
-        }
-        
-        _this.handle = query.observe({
-          added: function(doc) { 
-            _this.addFeature(doc).delayFitBounds();
-          },
-          changed: function(newDocument, oldDocument) {
-            if (!_.isEqual(newDocument, oldDocument)) {
-              console.log('we need update this document');
-            }
-          },
-          removed: function(oldDocument) { 
-            _this.removeFeature(oldDocument); 
-          }
-        });
-
-      })
-    },
-
-    // When in 'Trail Browse Mode' we want to observe our
-    // Trail subscription.
-    observeTrails: function(){
-      var _this = this; 
-      if (this.autorun) this.autorun.stop();
-
-      this.autorun = Meteor.autorun(function() {
-        var query = Trails.find();
-
-        if (_this.handle){
-          _this.handle.stop();
-          _this.removeAllFeatures();
-        }
-
-        _this.handle = query.observe({
-          added: function(doc) { 
-            _this.addFeature(doc); 
-          },
-          changed: function(newDoc, oldDoc) {
-            console.log('we need to update position of trail');
-          },
-          removed: function(oldDoc){ 
-            _this.removeFeature(oldDoc); 
-          }
-        });
+          _this.enterMode('browse');
       });
     },
 
-    // Events
-    // 
-    onViewChange: function(e){
-      var bounds = this.map.getBounds()
-        , boundObject = { 
-            southWest: [bounds._southWest.lat, bounds._southWest.lng],
-            northEast: [bounds._northEast.lat, bounds._northEast.lng] 
-          };
-
-      if (MapBounds.find().count() < 1) MapBounds.insert(boundObject);
-      else MapBounds.update({}, boundObject);
-
-      this.browseLocation = this.map.getCenter();
-      this.browseZoom = this.map.getZoom();
+    // TODO: Modes aren't necessarily mutually exclusive. If we are
+    // editing, for instance, we will be in 'detail' mode.
+    enterMode: function(name){
+      if (this.mode && name !== 'drawing') this.mode.exit();
+      console.log(this);
+      this.modes[name].enter();
+      this.mode = this.modes[name];
     },
 
-    onLocationFound: function(e){  
-      this.map.setView(e.latlng, 12);
-    },
 
     // Handle Observe -> Map data synchronization.
-    // 
     addFeature: function(doc){
-      var newFeature = Trailmix.Feature(doc, { map : this })
-        , el;
+      var newFeature = Trailmix.Feature(doc, { map : this }),
+          el;
 
-      if (!newFeature)
-        return;
-
+      if (!newFeature) return;
       el = newFeature.el;
-
       if (newFeature) {
         this.idToFeatures[doc._id] = newFeature;
         this.features.addLayer(el);
         if (el._label && el._label.options.noHide)
           el.showLabel();
       }
-      return this; 
+      return this;
     },
 
     // Remove Feature & Remove Trail are basically the same, except
     // for 'features' contains a different kind of object. I should
-    // eventually make this perform the same, which would allow 
-    // better code reuse. 
+    // eventually make this perform the same, which would allow
+    // better code reuse.
     removeFeature: function(doc){
       var feature = this.idToFeatures[doc._id];
       if (feature) {
@@ -199,7 +96,6 @@ Trailmix.MapView = (function(){
     },
 
     // Basic map functions
-    // 
     fitBounds: function(){
       if (this.features) {
         this.map.fitBounds(this.features.getBounds());
@@ -208,16 +104,16 @@ Trailmix.MapView = (function(){
         if (currentTrail.coordinates){
           this.map
             .panTo(currentTrail.coordinates)
-            .setZoom(12);  
+            .setZoom(12);
         }
       }
     },
 
-    // Wait until all of the features have loaded before 
+    // Wait until all of the features have loaded before
     // we determine our new map bounds.
     delayFitBounds: function(){
-      this.timer && clearInterval(this.timer);
-      this.timer = setTimeout(_.bind(this.fitBounds, this), 300); 
+      if (this.timer) Meteor.clearInterval(this.timer);
+      this.timer = Meteor.setTimeout(_.bind(this.fitBounds, this), 300);
     },
 
     resizeMap: function(){
@@ -227,16 +123,19 @@ Trailmix.MapView = (function(){
 
     // XXX also allow adding a marker
     addDrawingControls: function(){
-      // L.Draw.Polyline();
-      this.draw = new L.Polyline.Draw(this.map, {title: 'Draw a line.'});
-      this.map.on('draw:poly-created', _.bind(this.onFeatureCreated, this));
-      this.draw.on('activated', function(e){
-        console.log('drawing controls activated');
-      });
-      this.map.on('drawing', function(){
-        console.log('drawing is happening');
-      });
-      this.draw.enable();
+      // Enable Polyline Drawing
+      this.draw = new L.Polyline.Draw(this.map, { title: 'Draw a line.' });
+      this.map
+        .on('draw:poly-created', _.bind(this.onFeatureCreated, this))
+        .on('drawing', function(){
+          console.log('drawing is happening');
+        });
+
+      this.draw
+        .on('activated', function(e){
+          console.log('drawing controls activated');
+        })
+        .enable();
     },
 
     highlightFeature: function(id){
@@ -246,15 +145,14 @@ Trailmix.MapView = (function(){
     },
 
     // Editing States
-    // 
     editFeature: function(doc) {
       var el = this.idToFeatures[doc._id];
 
       if (this.currentlyEditing)
         this.currentlyEditing.disableEditing();
 
-      this.currentlyEditing = el; 
-      el.enableEditing(); 
+      this.currentlyEditing = el;
+      el.enableEditing();
     },
 
     disableEditFeature: function(doc) {
@@ -265,7 +163,7 @@ Trailmix.MapView = (function(){
     onFeatureCreated: function(e){
       // XXX - it might be easier if I use the {lat: , lng: }
       // format over the array format. Seems to be the more standard
-      // approach in both leaflet and mongo. 
+      // approach in both leaflet and mongo.
       var coordinates = _.map(e.poly.getLatLngs(), function(coords){
         return [coords.lat, coords.lng];
       });
@@ -284,7 +182,7 @@ Trailmix.MapView = (function(){
     // of coordinates we have. We need to project these coordinates
     // into LatLng objects, and then into Points. We simplify the Points,
     // and then convert them back to LatLngs. We then return the
-    // array of LatLngs, to be saved in the database.  
+    // array of LatLngs, to be saved in the database.
     simplifyPolyline: function(coordinates){
       // Convert each feature into a point.
       var pts = _.map(coordinates, function(latlng, i){
