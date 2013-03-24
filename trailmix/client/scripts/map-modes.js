@@ -7,12 +7,12 @@
 		enter: function(){
 			_.each(this.behaviors, function(behavior){
 				this.context.install(behavior);
-			});
+			}, this);
 		},
 		exit: function(){
 			_.each(this.behaviors, function(behavior){
 				this.context.uninstall(behavior);
-			});
+			}, this);
 		}
 	};
 
@@ -48,6 +48,17 @@
 		};
 
 		mode.exit = modeFunctions.exit;
+		return mode;
+	};
+
+	Trailmix.modes.UserInput = function(context){
+		var mode = {
+			context: context,
+			behaviors: [
+				Trailmix.behaviors.selectOrigin(context)
+			]
+		};
+		_.extend(mode, modeFunctions);
 		return mode;
 	};
 

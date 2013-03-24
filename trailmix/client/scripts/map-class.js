@@ -45,8 +45,16 @@ Trailmix.MapView = (function(){
       });
     },
 
-    // TODO: Modes aren't necessarily mutually exclusive. If we are
-    // editing, for instance, we will be in 'detail' mode.
+    // TODO: Modes aren't necessarily mutually exclusive.
+    // If we are editing, for instance, we will be in 'detail' mode.
+    // If we are switching between detail, and browse, then we
+    // should reset our modes. This means we should probably
+    // keep an array of modes, and iterate through each, exiting
+    // each mode if need be.
+    // Otherwise we could:
+    // (1) Session.set('mapView', 'detail');
+    // (2) Session.set('mapView', 'origin');
+    // How do we _exit_ modes, then?
     enterMode: function(name){
       if (this.mode && name !== 'drawing') this.mode.exit();
       console.log(this);

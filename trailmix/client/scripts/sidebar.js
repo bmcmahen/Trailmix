@@ -2,15 +2,12 @@
 
 
   Template.sideBar.helpers({
-   
     browsingView : function() {
       return Session.equals('mapView', 'browse');
     },
-
     detailView : function(){
       return Session.equals('mapView', 'detail');
     }
-
   });
 
   Template.detailView.events({
@@ -35,17 +32,17 @@
       // XXX Optimize to also get those in the surrounding area? (or do
       // this on the subscription?)
       // XXX eventually use $where && $box if minimongo ever supports the
-      // geo stuff. 
+      // geo stuff.
       var bounds = MapBounds.findOne();
       if (bounds){
         var sw = bounds.southWest
-          , ne = bounds.northEast; 
+          , ne = bounds.northEast;
 
         return Trails.find({
           'coordinates.0': {'$gte' : sw[0], '$lte' : ne[0]},
           'coordinates.1': {'$gte' : sw[1], '$lte' : ne[1]}
         });
-      } 
+      }
     }
   });
 
@@ -55,7 +52,7 @@
       Session.set('currentTrail', this._id);
     }
   })
-  
+
 
 
 })(Trailmix);

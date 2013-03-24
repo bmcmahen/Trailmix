@@ -62,7 +62,7 @@ Trailmix.behaviors.observeTrails = function(context){
 			if (this.autorun) this.autorun.stop();
 			if (this.handle) {
 				this.handle.stop();
-				this.removeAllFeatures();
+				context.removeAllFeatures();
 			}
 		}
 	};
@@ -80,10 +80,8 @@ Trailmix.behaviors.observeBoundsChanges = function(context){
 						northEast: [ bounds._northEast.lat, bounds._northEast.lng ]
 					};
 
-			if (MapBounds.find().count() > 1)
-				MapBounds.insert(boundObject);
-			else
-				MapBounds.update({}, boundObject);
+			if (MapBounds.find().count() > 1) MapBounds.insert(boundObject);
+			else MapBounds.update({}, boundObject);
 			context.browseLocation = context.map.getCenter();
 			context.browseZoom = context.map.getZoom();
 		},
@@ -102,7 +100,6 @@ Trailmix.behaviors.observeBoundsChanges = function(context){
 // map at that location.
 Trailmix.behaviors.geoLocate = function(context){
 	return {
-
 		onLocationFound: function(e){
 			context.map.setView(e.latlng, 12);
 		},
@@ -113,6 +110,22 @@ Trailmix.behaviors.geoLocate = function(context){
 
 		off : function() {
 			context.map.off('locationfound', this.onLocationFound);
+		}
+	};
+};
+
+Trailmix.behaviors.selectOrigin = function(context){
+	return {
+		onClick: function(e){
+			console.log('clicked here', e);
+		},
+
+		on: function(){
+			context.map.on('click', this.onClick);
+		},
+
+		off : function() {
+			context.map.off('click', this.onClick);
 		}
 	};
 };

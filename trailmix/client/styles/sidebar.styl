@@ -29,10 +29,11 @@
   box-sizing border-box
 
   & li
-    font-size 14px
-    padding 0 15px
-    border-bottom 1px dotted #eee
-    margin-bottom -1px
+    font-size 12px
+    padding 0 7px
+    border-bottom 1px solid rgb(245, 245, 245)
+    border-top 1px solid rgb(245, 245, 245)
+    margin-top -1px
     position relative
     $clearfix()
 
@@ -50,7 +51,7 @@
 
     &:hover
       cursor pointer
-      background #efefef
+      background #f8f8f8
 
       & i
         opacity 1
@@ -58,8 +59,8 @@
     & .type
       float left
       padding-left 0
-      line-height 33px
-      margin-right 10px
+      line-height 34px
+      margin-right 6px
 
       & img
         margin-left 0
@@ -69,19 +70,46 @@
 
     & .name
       float left
-      line-height 35px
+      margin-top 10px
 
     & .controls
       float right
 
-    & i
+    & a.action
       position absolute
-      top 10px
-      right 10px
-      opacity 0.3
+      top 0
+      width 35px
+      height 36px
+      border 1px solid rgb(245, 245, 245)
+      border-bottom none
+      border-top none
+
+      &:hover
+        cursor default
+        background #ddd
+
+      &:hover img
+        opacity 1
+
+    & img
+      padding 5px
+      padding-left 3px
+
+    & a.delete
+      right 15px
+
+      & img
+        padding-left 2px
+        padding 5px
+
+    & a.edit
+      right 52px
+      border-right none
+
 
 .meta-wrapper
-  padding 17px 15px
+  padding 5px 15px
+  padding-bottom 12px
   $clearfix()
 
   & h2
@@ -93,3 +121,40 @@
 
 #edit-tabs-content
   padding 0
+
+.add-new
+  text-align right
+  padding 10px
+
+  & .btn
+    display inline-block
+
+#upload-field
+  display none
+
+.trailhead
+  padding-top 10px
+
+  & i
+    margin-left -5px
+    margin-top 1px
+    opacity 0.5
+
+  & .trailorigin
+    margin-left 0
+
+.align-right
+  text-align right
+
+  & button
+    display inline-block
+
+  & input[type=submit]
+    width auto
+    display inline-block
+    line-height 15px
+    margin-top 4px
+
+.sidebar-navigation
+  padding 7px
+  padding-bottom 0

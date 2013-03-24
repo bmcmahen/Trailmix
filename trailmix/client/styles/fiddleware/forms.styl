@@ -3,7 +3,7 @@
 
 input
   border 0px
-  border-radius 2px
+  border-radius 0
   margin 8px
 
   &[type='text']
@@ -14,6 +14,8 @@ input
     box-sizing border-box
     border 1px solid rgba(213, 213, 213, 0.54)
     font-family $font-family
+    background rgb(247, 245, 245)
+    border-radius 0
     box-shadow: inset 1px 1px 1px rgba(0,0,0,0.3);
 
     &.large
@@ -23,7 +25,10 @@ input
     &.wide
       width 100%
 
-form 
+    &[type='submit']
+      border-radius 2px
+
+form
   display block
   box-sizing border-box
   margin 15px
@@ -33,9 +38,11 @@ form
 
   & label
     display block
-    font-size 14px
-    margin-top 10px
+    font-size 12px
+    margin-top 17px
     font-weight 600
+    color #666
+    text-transform uppercase
 
     & input
     & textarea
@@ -51,7 +58,9 @@ form
   & textarea
     width 100%
     min-height 200px
-    border-radius 2px
+    border-radius 0
+    padding 5px
+    background rgb(247, 245, 245)
     box-shadow: inset 1px 1px 1px rgba(0,0,0,0.3);
     box-sizing border-box
     border 1px solid rgba(213, 213, 213, 0.54)
