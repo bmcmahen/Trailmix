@@ -81,7 +81,6 @@ Trailmix.behaviors.observeBoundsChanges = function(context){
 			else MapBounds.update({}, boundObject);
 			context.browseLocation = context.map.getCenter();
 			context.browseZoom = context.map.getZoom();
-			console.log(context.browseLocation, context.browseZoom);
 		},
 		on : function(){
 			context.map.on('moveend', this.onBoundsChange);

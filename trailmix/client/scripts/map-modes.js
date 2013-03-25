@@ -44,7 +44,6 @@
 			if (context.browseLocation) {
 				context.map.setView(context.browseLocation, context.browseZoom);
 			} else {
-				console.log('hi?');
 				context.install(Trailmix.behaviors.geoLocate(context));
 			}
 		};

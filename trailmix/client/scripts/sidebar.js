@@ -8,8 +8,36 @@
     },
     detailView : function(){
       return Session.equals('mapView', 'detail');
+    },
+    width: function(){
+      return Session.get('carouselItemWidth');
+    },
+    position: function(){
+      return Session.get('carouselPosition');
+    },
+    totalWidth: function(){
+      return Session.get('carouselTotalWidth');
+    },
+    height: function(){
+      return Session.get('carouselItemHeight');
     }
   });
+
+  Template.sideBar.preserve(['#carousel-inner']);
+
+  Template.sideBar.rendered = function(){
+    this.$el = this.$el || $(this.firstNode).parent();
+    var width = this.$el.width();
+    Session.set('carouselItemWidth', width);
+    Session.set('carouselTotalWidth', width * 2);
+    Session.set('carouselItemHeight', this.$el.parent().height());
+    this.hasRendered = true;
+
+    if (Session.equals('mapView', 'detail'))
+      Session.set('carouselPosition', 0 - width);
+    else
+      Session.set('carouselPosition', 0);
+  };
 
   // Enter editing mode.
   Template.detailView.events({

@@ -1,10 +1,10 @@
  Trailmix.Feature = (function(){
 
   // Marker Icons
-  // 
+  //
   // doc.properties.markerSymbol = 'parking'
   // doc.properties.markerSize = 'medium' (small, medium, large)
-  // 
+  //
   // parking-18.png
 
 
@@ -12,35 +12,35 @@
 
   // Feature API
   // Either creates a 'BrowseFeature' or 'DetailFeature' depending
-  // on our document type. 
+  // on our document type.
   var Feature = function(doc, options){
-    if (doc.geometry) return new EditFeature(doc, options);    
+    if (doc.geometry) return new EditFeature(doc, options);
     else if (doc.coordinates) return new BrowseFeature(doc, options);
   };
 
   var EditFeature = function(doc, options){
-    this.mapClass = options.map; 
-    this.type = doc.geometry.type; 
+    this.mapClass = options.map;
+    this.type = doc.geometry.type;
     this.coords = doc.geometry.coordinates;
     if (doc.properties){
       this.markerSymbol = doc.properties.markerSymbol;
       this.markerSize = doc.properties.markerSize;
       this.name = doc.properties.name;
     }
-   
+
     // Default Styles
     this.defaultLineStyle = {
       color: 'rgb(33, 47, 151)',
       opacity: 1,
       weight: 2.5,
       dashArray: '8, 5'
-    }
+    };
 
     // Build our feature, depending on if it's a point
     // or linestring.
     this.el = (function(){
       if (this.type === 'Point')
-        return this.createMarker(); 
+        return this.createMarker();
       if (this.type === 'LineString')
         return this.createPolyline();
     }).call(this);
@@ -52,7 +52,8 @@
 
     // Create our Marker
     createMarker: function(){
-      return L.marker(this.coords, { 
+      console.log('create marker');
+      return L.marker(this.coords, {
           icon: this.determineIcon(),
           riseOnHover: true
         })
@@ -67,9 +68,9 @@
         .on('dragend', _.bind(this.onDragEnd, this));
     },
 
-    // Determine which icon our Marker should be using. 
+    // Determine which icon our Marker should be using.
     determineIcon: function(){
-      var iconProperties = { 
+      var iconProperties = {
         iconUrl: '/images/icons/circle-12.png',
         iconSize: [12, 12],
         labelAnchor: [0, 8]
@@ -79,12 +80,22 @@
         case 'trail head' :
           _.defaults({ iconSize: [18, 18] }, iconProperties);
           break;
+        case 'browse' :
+         iconProperties = _.defaults({
+            iconUrl: '/map_icons/marker-icon.png',
+            iconSize: [25, 41],
+            shadowUrl: '/map_icons/marker-shadow.png',
+            shadowSize: [41, 41],
+            shadowAnchor: [15, 40],
+            iconAnchor: [15, 40]
+          }, iconProperties);
+          break;
       }
       return L.icon(iconProperties);
     },
 
     // EDITING
-    // 
+    //
     enableEditing: function(){
       if (this.type === 'Point') {
         this.el.dragging.enable();
@@ -96,7 +107,7 @@
           //edited, which is fine for 'updates'. For certain
           //forms of editing, we need to figure out which points
           //are being clicked, to determine where to split certain
-          //lines. 
+          //lines.
           console.log('hi', e)
         });
       }
@@ -121,13 +132,13 @@
     },
 
     // Take two polylines (id) and join them. NOTE. This might
-    // be difficult and kinda useless. Polyline cannot overlap. 
+    // be difficult and kinda useless. Polyline cannot overlap.
     joinPolyline: function(){
 
     },
 
     // HIGHLIGHTING
-    // 
+    //
     highlight: function(){
       if (this.type === 'LineString'){
         this.mapClass.map.fitBounds(this.el.getBounds());
@@ -137,10 +148,10 @@
           dashArray: null
         });
       } else if (this.type === 'Point'){
-        this.el.openPopup(); 
+        this.el.openPopup();
         this.mapClass.map.panTo(this.el.getLatLng());
       }
-      return this; 
+      return this;
     },
 
     disableHighlight: function(){
@@ -149,18 +160,18 @@
       } else if (this.type === 'LineString'){
         this.el.setStyle(this.defaultLineStyle);
       }
-      return this; 
+      return this;
     },
 
     // EVENTS
     // Feature has been clicked.
     onFeatureClick: function(e){
-      var id = e.target._id; 
+      var id = e.target._id;
       Session.set('selectedFeature', id);
       this.focusListElement(id);
     },
 
-    // Marker has been dragged and dropped. 
+    // Marker has been dragged and dropped.
     onDragEnd: function(e){
       var feature = e.target
         , latLng = feature.getLatLng();
@@ -180,20 +191,18 @@
   });
 
   var BrowseFeature = function(doc, options){
-    this.mapClass = options.map; 
+    this.mapClass = options.map;
     this.doc = doc;
-    this.el = new L.Marker(doc.coordinates);
+    this.coords = doc.coordinates;
+    this.markerSymbol = 'browse';
+    this.el = this.createMarker();
     this.el.on('click', _.bind(this.onClick, this));
   };
 
-  _.extend(BrowseFeature.prototype, {
+  _.extend(BrowseFeature.prototype, EditFeature.prototype, {
     onClick: function(e){
       Session.set('currentTrail', this.doc._id);
       Session.set('mapView', 'detail');
-      // A trail should _always_ have one feature by necessity,
-      // which should be the origin point of the trail. This cannot
-      // be deleted, but only changed. This ensures that 'fitBounds'
-      // will always be called, no matter the map. 
     }
   });
 

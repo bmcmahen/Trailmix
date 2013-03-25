@@ -5,13 +5,14 @@ Trailmix.MapView = (function(){
     this.map = new L.Map('map', {
       center: new L.LatLng(53.1103, -119.1567),
       zoom: 10,
-      layers: new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
-      // layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png'),
+      // layers: new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+      layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png'),
       maxZoom: 15,
       attributionControl: false
     });
     L.control.scale().addTo(this.map);
     this.features = L.featureGroup().addTo(this.map);
+    this.markers = new L.MarkerClusterGroup().addTo(this.map);
     this.idToFeatures = {};
     this.modes = {
       detail : new Trailmix.modes.Detail(this),
@@ -72,17 +73,17 @@ Trailmix.MapView = (function(){
 
     // Handle Observe -> Map data synchronization.
     addFeature: function(doc){
-      var newFeature = Trailmix.Feature(doc, { map : this }),
-          el;
-
+      var newFeature = Trailmix.Feature(doc, { map : this });
       if (!newFeature) return;
-      el = newFeature.el;
-      if (newFeature) {
-        this.idToFeatures[doc._id] = newFeature;
-        this.features.addLayer(el);
-        if (el._label && el._label.options.noHide)
-          el.showLabel();
+      var el = newFeature.el;
+      this.idToFeatures[doc._id] = newFeature;
+      if (Session.equals('mapView', 'browse')) {
+        this.markers.addLayer(el);
+        return this;
       }
+      this.features.addLayer(el);
+      if (el._label && el._label.options.noHide)
+        el.showLabel();
       return this;
     },
 
@@ -93,7 +94,11 @@ Trailmix.MapView = (function(){
     removeFeature: function(doc){
       var feature = this.idToFeatures[doc._id];
       if (feature) {
-        this.features.removeLayer(feature.el);
+        if (Session.equals('mapView', 'browse')) {
+          this.markers.addLayer(el);
+        } else {
+          this.features.removeLayer(feature.el);
+        }
         delete this.idToFeatures[doc._id];
       }
       return this;
@@ -106,6 +111,7 @@ Trailmix.MapView = (function(){
     removeAllFeatures: function(){
       if (this.features && this.idToFeatures){
         this.features.clearLayers();
+        this.markers.clearLayers();
         this.idToFeatures = {};
       }
     },
@@ -128,7 +134,7 @@ Trailmix.MapView = (function(){
     // we determine our new map bounds.
     delayFitBounds: function(){
       if (this.timer) Meteor.clearInterval(this.timer);
-      this.timer = Meteor.setTimeout(_.bind(this.fitBounds, this), 300);
+      this.timer = Meteor.setTimeout(_.bind(this.fitBounds, this), 100);
     },
 
     resizeMap: function(){

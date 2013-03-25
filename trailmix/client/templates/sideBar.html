@@ -1,15 +1,22 @@
 <template name='sideBar'>
-  {{#if browsingView}}
-    {{>browseView}}
-  {{/if}}
+  <div id='carousel' class='carousel'>
+    <ul id='carousel-inner' class='carousel-inner' style='width: {{totalWidth}}px;
+    {{#if browsingView}} -webkit-transform: translate3d(0px, 0, 0);'>
+    {{else}} -webkit-transform: translate3d({{position}}px, 0, 0);'>
+    {{/if}}
+      <li class='carousel-item' style='width: {{width}}px; height: {{height}}px;'>
+      {{>browseView}}
+      </li>
 
-  {{#if detailView}}
-    {{>detailView}}
-  {{/if}}
+      <li class='carousel-item' style='width: {{width}}px; height: {{height}}px;'>
+        {{>detailView}}
+      </li>
+    </ul>
+  </div>
 </template>
 
 <template name='browseView'>
-  <ul>
+  <ul class='browse-list'>
     {{#each trail}}
       {{>browseTrailList}}
     {{else}}
