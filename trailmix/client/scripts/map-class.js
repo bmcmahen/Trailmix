@@ -40,10 +40,11 @@ Trailmix.MapView = (function(){
       var _this = this;
       if (this.determineMode) this.determineMode.stop();
       this.determineMode = Meteor.autorun(function(){
-        if (Session.equals('mapView', 'detail'))
-          _this.enterMode('detail');
-        else if (Session.equals('mapView', 'browse'))
-          _this.enterMode('browse');
+       var view = Session.get('mapView');
+       var mode = _this.modes[view];
+       if (_this.mode) _this.mode.exit();
+       mode.enter();
+       _this.mode = mode;
       });
       return this;
     },
@@ -68,15 +69,6 @@ Trailmix.MapView = (function(){
       });
       return this;
     },
-
-    // How should we handle mutual exclusivity of these?
-    enterMode: function(name){
-      if (this.mode && name !== 'drawing') this.mode.exit();
-      console.log(this);
-      this.modes[name].enter();
-      this.mode = this.modes[name];
-    },
-
 
     // Handle Observe -> Map data synchronization.
     addFeature: function(doc){

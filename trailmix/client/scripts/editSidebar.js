@@ -274,6 +274,11 @@
     'click .trailorigin' : function(e, t){
       console.log('hi??');
       Session.set('promptInput', 'selectTrailhead');
+    },
+
+    'click .btn-back': function(e, t){
+      Session.set('mapView', 'browse');
+      return false;
     }
 
   });

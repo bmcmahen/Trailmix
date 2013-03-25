@@ -8,7 +8,6 @@ Trailmix.behaviors = {};
 // trail, and sync them with the map.
 Trailmix.behaviors.observeTrailFeatures = function(context) {
 	return {
-
 		on : function() {
 			var _this = this;
 
@@ -19,21 +18,22 @@ Trailmix.behaviors.observeTrailFeatures = function(context) {
 					context.removeAllFeatures();
 				}
 				_this.handle = query.observe({
-					added: function(newDoc) { context.addFeature(newDoc); },
+					added: function(newDoc) {
+						context.addFeature(newDoc);
+						context.delayFitBounds();
+					},
 					changed: function(newDoc, oldDoc) { console.log('update'); },
 					removed: function(oldDoc) { context.removeFeature(oldDoc); }
 				});
 			});
 		},
-
 		off : function() {
 			if (this.autorun) this.autorun.stop();
 			if (this.handle) {
 				this.handle.stop();
-				this.context.removeAllFeatures();
+				context.removeAllFeatures();
 			}
 		}
-
 	};
 };
 
@@ -41,7 +41,6 @@ Trailmix.behaviors.observeTrailFeatures = function(context) {
 // trail that exists within our description.
 Trailmix.behaviors.observeTrails = function(context){
 	return {
-
 		on : function() {
 			var _this = this;
 			this.autorun = Meteor.autorun(function() {
@@ -57,7 +56,6 @@ Trailmix.behaviors.observeTrails = function(context){
 				});
 			});
 		},
-
 		off : function() {
 			if (this.autorun) this.autorun.stop();
 			if (this.handle) {
@@ -72,7 +70,6 @@ Trailmix.behaviors.observeTrails = function(context){
 // so that our subscription information also changes.
 Trailmix.behaviors.observeBoundsChanges = function(context){
 	return {
-
 		onBoundsChange: function(e) {
 			var bounds = context.map.getBounds(),
 					boundObject = {
@@ -80,19 +77,17 @@ Trailmix.behaviors.observeBoundsChanges = function(context){
 						northEast: [ bounds._northEast.lat, bounds._northEast.lng ]
 					};
 
-			console.log(boundObject);
 			if (MapBounds.find().count() < 1) MapBounds.insert(boundObject);
 			else MapBounds.update({}, boundObject);
 			context.browseLocation = context.map.getCenter();
 			context.browseZoom = context.map.getZoom();
+			console.log(context.browseLocation, context.browseZoom);
 		},
-
 		on : function(){
-			this.onBoundsChange();
 			context.map.on('moveend', this.onBoundsChange);
 		},
-
 		off : function(){
+			console.log('off!');
 			context.map.off('moveend', this.onBoundsChange);
 		}
 	};
@@ -104,12 +99,12 @@ Trailmix.behaviors.geoLocate = function(context){
 	return {
 		onLocationFound: function(e){
 			context.map.setView(e.latlng, 12);
+			context.map.off('locationfound', this.onLocationFound);
 		},
-
 		on : function() {
 			context.map.on('locationfound', this.onLocationFound);
+			context.map.locate();
 		},
-
 		off : function() {
 			context.map.off('locationfound', this.onLocationFound);
 		}

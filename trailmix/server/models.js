@@ -1,8 +1,6 @@
 
 /**
- *
  * Collections
- *
  */
 
 Features = new Meteor.Collection('features');
@@ -16,11 +14,8 @@ Meteor.startup(function(){
   Trails._ensureIndex({coordinates: '2d'});
 });
 
-
 /**
- *
  * Publish
- *
  */
 
 // Only publish features that belong to a specific trail.

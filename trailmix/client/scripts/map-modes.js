@@ -36,15 +36,17 @@
 			]
 		};
 
-		if (!context.browseLocation)
-			mode.behaviors.push(Trailmix.behaviors.geoLocate(context));
-
 		mode.enter = function(){
 			_.each(this.behaviors, function(behavior){
 				context.install(behavior);
 			});
-			if (context.browseLocation)
+
+			if (context.browseLocation) {
 				context.map.setView(context.browseLocation, context.browseZoom);
+			} else {
+				console.log('hi?');
+				context.install(Trailmix.behaviors.geoLocate(context));
+			}
 		};
 
 		mode.exit = modeFunctions.exit;
