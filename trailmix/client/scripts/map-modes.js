@@ -51,11 +51,13 @@
 		return mode;
 	};
 
-	Trailmix.modes.UserInput = function(context){
+	Trailmix.modes.SelectTrailhead = function(context){
+		var message = 'Click to Select the Primary Trailhead';
 		var mode = {
 			context: context,
 			behaviors: [
-				Trailmix.behaviors.selectOrigin(context)
+				Trailmix.behaviors.selectOrigin(context),
+				Trailmix.behaviors.displayMessage(message, context)
 			]
 		};
 		_.extend(mode, modeFunctions);

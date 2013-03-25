@@ -83,8 +83,9 @@
                 <i class='icon icon-screenshot'></i>
                 Select Trailhead
               </button>
-              {{#if this.trailhead}}
-                <span> trailhead </span>
+              {{#if this.coordinates}}
+                <span> Lat: {{this.coordinates.[0]}} </span>
+                <span> Lng: {{this.coordinates.[1]}} </span>
               {{/if}}
             </div>
             <label> Description

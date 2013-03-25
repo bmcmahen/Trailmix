@@ -268,6 +268,12 @@
 
     'click .back' : function(){
       Session.set('editingFeature', null);
+    },
+
+
+    'click .trailorigin' : function(e, t){
+      console.log('hi??');
+      Session.set('promptInput', 'selectTrailhead');
     }
 
   });
@@ -298,15 +304,6 @@
     'click .feature-instance' : function(e, t){
       Session.set('selectedFeature', this._id);
       Trailmix.map.highlightFeature(this._id);
-    },
-
-    'click .trailorigin' : function(e, t){
-      // On the map, show directions for the user.
-      // i.e., 'Click to select trail origin'.
-      // Also set our map object to 'listen'
-      // for a click, and then update our map
-      // with that that location.
-      Session.set('editMap', 'trail-origin');
     }
 
   });

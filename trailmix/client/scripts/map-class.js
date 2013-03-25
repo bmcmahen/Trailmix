@@ -15,9 +15,11 @@ Trailmix.MapView = (function(){
     this.idToFeatures = {};
     this.modes = {
       detail : new Trailmix.modes.Detail(this),
-      browse : new Trailmix.modes.Browse(this)
+      browse : new Trailmix.modes.Browse(this),
+      selectTrailhead: new Trailmix.modes.SelectTrailhead(this)
     };
-    this.determineMapMode();
+    this.determineMapMode().promptInput();
+
   };
 
   _.extend(MapView.prototype, {
@@ -43,18 +45,31 @@ Trailmix.MapView = (function(){
         else if (Session.equals('mapView', 'browse'))
           _this.enterMode('browse');
       });
+      return this;
     },
 
-    // TODO: Modes aren't necessarily mutually exclusive.
-    // If we are editing, for instance, we will be in 'detail' mode.
-    // If we are switching between detail, and browse, then we
-    // should reset our modes. This means we should probably
-    // keep an array of modes, and iterate through each, exiting
-    // each mode if need be.
-    // Otherwise we could:
-    // (1) Session.set('mapView', 'detail');
-    // (2) Session.set('mapView', 'origin');
-    // How do we _exit_ modes, then?
+    promptInput: function(){
+      var _this = this;
+      if (this.promptUserInput) this.promptUserInput.stop();
+
+      this.promptUserInput = Meteor.autorun(function(){
+        var input = Session.get('promptInput');
+
+        if (!input && _this.prompt) {
+          _this.prompt.exit();
+          delete _this.prompt;
+        } else if (input) {
+          if (_this.prompt) _this.prompt.exit();
+          var mode = _this.modes[input];
+          mode.enter();
+          _this.prompt = mode;
+        }
+
+      });
+      return this;
+    },
+
+    // How should we handle mutual exclusivity of these?
     enterMode: function(name){
       if (this.mode && name !== 'drawing') this.mode.exit();
       console.log(this);

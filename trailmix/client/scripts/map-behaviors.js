@@ -76,17 +76,19 @@ Trailmix.behaviors.observeBoundsChanges = function(context){
 		onBoundsChange: function(e) {
 			var bounds = context.map.getBounds(),
 					boundObject = {
-						sourthWest: [ bounds._southWest.lat, bounds._southWest.lng ],
+						southWest: [ bounds._southWest.lat, bounds._southWest.lng ],
 						northEast: [ bounds._northEast.lat, bounds._northEast.lng ]
 					};
 
-			if (MapBounds.find().count() > 1) MapBounds.insert(boundObject);
+			console.log(boundObject);
+			if (MapBounds.find().count() < 1) MapBounds.insert(boundObject);
 			else MapBounds.update({}, boundObject);
 			context.browseLocation = context.map.getCenter();
 			context.browseZoom = context.map.getZoom();
 		},
 
 		on : function(){
+			this.onBoundsChange();
 			context.map.on('moveend', this.onBoundsChange);
 		},
 
@@ -117,15 +119,40 @@ Trailmix.behaviors.geoLocate = function(context){
 Trailmix.behaviors.selectOrigin = function(context){
 	return {
 		onClick: function(e){
-			console.log('clicked here', e);
+			Trails.update({_id: Session.get('currentTrail')}, {
+				'$set' : { coordinates : [e.latlng.lat, e.latlng.lng] }
+			});
+			Session.set('promptInput', null);
 		},
 
 		on: function(){
 			context.map.on('click', this.onClick);
+			$(window).on('keyup', function(e){
+				if (e.keyCode === 27)
+					Session.set('promptInput', null);
+			});
 		},
 
 		off : function() {
 			context.map.off('click', this.onClick);
+			$(window).off('keyup');
+		}
+	};
+};
+
+Trailmix.behaviors.displayMessage = function(message, context){
+	return {
+		$el : $('#map'),
+		template: function(message){
+			return "<div id='message'><p>"+message+"</p></div>";
+		},
+		on: function(){
+			this.$el.addClass('display-message');
+			this.$el.append(this.template(message));
+		},
+		off: function(){
+			this.$el.removeClass('display-message');
+			this.$el.find('#message').remove();
 		}
 	};
 };

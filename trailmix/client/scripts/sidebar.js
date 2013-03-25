@@ -1,6 +1,7 @@
 (function(Trailmix){
 
-
+  // Our Sidebar should change views if we are in browse
+  // mode, or detail mode.
   Template.sideBar.helpers({
     browsingView : function() {
       return Session.equals('mapView', 'browse');
@@ -10,6 +11,7 @@
     }
   });
 
+  // Enter editing mode.
   Template.detailView.events({
     'click .edit-trail' : function(){
       Session.set('isEditing', true);
@@ -51,7 +53,7 @@
       Session.set('mapView', 'detail');
       Session.set('currentTrail', this._id);
     }
-  })
+  });
 
 
 
