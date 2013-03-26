@@ -5,8 +5,8 @@ Trailmix.MapView = (function(){
     this.map = new L.Map('map', {
       center: new L.LatLng(53.1103, -119.1567),
       zoom: 10,
-      // layers: new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
-      layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png'),
+      layers: new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+      // layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png'),
       maxZoom: 15,
       attributionControl: false
     });

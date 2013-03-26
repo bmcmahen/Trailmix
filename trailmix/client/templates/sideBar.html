@@ -5,9 +5,8 @@
     {{else}} -webkit-transform: translate3d({{position}}px, 0, 0);'>
     {{/if}}
       <li class='carousel-item' style='width: {{width}}px; height: {{height}}px;'>
-      {{>browseView}}
+        {{>browseView}}
       </li>
-
       <li class='carousel-item' style='width: {{width}}px; height: {{height}}px;'>
         {{>detailView}}
       </li>
@@ -28,18 +27,177 @@
 <template name='browseTrailList'>
   <li>
     <a href='#'> {{name}} </a>
+    <i class='icon icon-chevron-right'></i>
   </li>
 </template>
 
 <template name='detailView'>
-  {{#if isEditing}}
-    {{>editSidebar}}
-  {{else}}
+  <div class='sidebar-navigation'>
+    {{#unless isEditing}}
+    <a class='btn-back' href='#'> Browse Trails</a>
+    {{/unless}}
+    {{#if isEditing}}
+    <a class='btn toggle-edit btn-blue' href='#'> Done </a>
+    {{else}}
+    <a class='btn toggle-edit' href='#'> Edit </a>
+    {{/if}}
+  </div>
+  {{#isolate}}
     {{#with trail}}
-      <h2> {{this.name}} </h2>
-      <p> {{this.description}} </p>
-      <button class='edit-trail'>Edit</button>
+      <div class='meta-wrapper'>
+        <h2> {{this.name}} </h2>
+      </div>
+      {{>trailTabView}}
     {{/with}}
+  {{/isolate}}
+</template>
+
+<template name='trailTabView'>
+  <ul id='edit-tabs' class='nav nav-tabs'>
+    <li>
+      <a class='description {{#if descriptionTab}} active {{/if}}'>
+        Description</a>
+    </li>
+    {{#if isEditing}}
+    <li>
+      <a class='features {{#if featuresTab}} active {{/if}}'>Features</a>
+    </li>
+    {{/if}}
+  </ul>
+  <div id='edit-tabs-content' class='tab-content'>
+    {{#if descriptionTab}}
+      {{>descriptionTab}}
+    {{/if}}
+    {{#if featuresTab}}
+     {{>featuresTab}}
+    {{/if}}
+  </div>
+</template>
+
+<template name='descriptionTab'>
+  <div class='tab-pane'>
+    <div class='sidebar-wrapper'>
+      {{#with trail}}
+      {{#if isEditing}}
+      <form id='trail-metadata'>
+        <label> Name
+          <input type='text' class='trail-name large' value='{{this.name}}'>
+        </label>
+        <div class='trailhead'>
+          <button class='btn trailorigin'>
+            <i class='icon icon-screenshot'></i>
+            Select Trailhead
+          </button>
+          {{#if this.coordinates}}
+            <span> Lat: {{this.coordinates.[0]}} </span>
+            <span> Lng: {{this.coordinates.[1]}} </span>
+          {{/if}}
+        </div>
+        <label> Description
+          <textarea id='trail-description' class='trail-description'>{{#if this.description}}{{this.description}}{{/if}}</textarea>
+        </label>
+        {{>autoComplete}}
+        <div class='align-right'>
+          <input type='submit' class='btn btn-blue large' value='Save Changes'>
+        </div>
+      </form>
+      {{else}}
+        <p class='description'> {{this.description}} </p>
+      {{/if}}
+      {{/with}}
+    </div>
+  </div>
+</template>
+
+<template name='autoComplete'>
+  {{#if tagging}}
+    <ul id='autocomplete'>
+      {{#each tagResult}}
+        {{#isolate}}
+          <li> {{name}} </li>
+        {{/isolate}}
+      {{/each}}
+    <ul>
   {{/if}}
+</template>
+
+<template name='featuresTab'>
+  <div class='tab-pane' id='features'>
+    <div id='features'>
+      {{#unless editingFeature}}
+      <div class='add-new'>
+        <button class='btn upload'> Upload GPX </button>
+        <button class='btn btn-blue'> New Feature </button>
+        <input type='file' id='upload-field'>
+      </div>
+      <ul>
+        {{#each features}}
+          {{>feature}}
+        {{/each}}
+      </ul>
+      {{/unless}}
+      {{#if editingFeature}}
+        {{>editingFeature}}
+      {{/if}}
+    </div>
+  </div>
+</template>
+
+<template name='editingFeature'>
+  {{#with editingFeature}}
+  <form id='feature-form'>
+    <label> Feature Name
+      <input type='text' class='name' value='{{this.properties.name}}'>
+    </label> Feature Type
+    {{#isolate}}
+      <select>
+        <option value='Point' {{#if featureTypePoint}}selected{{/if}}> Point </option>
+        <option value='LineString' {{#unless featureTypePoint}}selected{{/unless}}> LineString </option>
+      </select>
+    {{/isolate}}
+    </label>
+    {{#if featureTypePoint}}
+    <button class='btn btn-green place'>Place Marker</button>
+    {{else}}
+    <button class='btn btn-green draw'>Draw LineString</button>
+    {{/if}}
+    <label> Description
+      <textarea class='description'>
+        {{this.properties.description}}
+      </textarea>
+    </label>
+    {{#if featureTypePoint}}
+      <p> point! </p>
+    {{else}}
+      <p> linestring! </p>
+    {{/if}}
+    <div class='button-list'>
+      <button class='save btn btn-blue'>Save Changes</button>
+      <button class='back btn'>Done</button>
+    </div>
+  </form>
+  <br>
+  {{/with}}
+</template>
+
+<template name='feature'>
+  <li class='feature-instance {{#if selected}} selected {{/if}}'>
+    <div class='type'>
+      {{#if this.properties.markerSymbol}}
+        <img id='{{this._id}}' src='/images/icons/{{properties.markerSymbol}}-24.png'>
+      {{else}}
+        <img id='{{this._id}}' src='/images/icons/marker-24.png'>
+      {{/if}}
+    </div>
+    <div class='name'>
+      {{this.properties.name}}
+    </div>
+    <a class='edit action' href='#'>
+      <img src='/images/icons/edit-icon.png'>
+    </a>
+    <a class='delete action' href='#'>
+      <img src='/images/icons/delete-icon.png'>
+    </a>
+  </li>
 </template>
 

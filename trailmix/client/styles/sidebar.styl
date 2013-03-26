@@ -37,6 +37,9 @@
     position relative
     $clearfix()
 
+    &:hover
+      cursor pointer
+
     &.selected
       background $blue
       color $white
@@ -47,14 +50,6 @@
 
       &:hover
         background $blue
-
-
-    &:hover
-      cursor pointer
-      background #f8f8f8
-
-      & i
-        opacity 1
 
     & .type
       float left
@@ -158,6 +153,9 @@
 .sidebar-navigation
   padding 7px
   padding-bottom 0
+  height 47px
+  box-sizing border-box
+  $clearfix()
 
 .browse-list
   list-style none
@@ -172,7 +170,38 @@
 
   & li
     width 100%
-    padding 15px
     font-size 14px
     border-bottom 1px solid rgb(238, 238, 238)
-    font-weight 600
+    font-weight 400
+    position relative
+
+    & a
+      display block
+      padding 13px
+      text-decoration none
+      color #08c
+
+      &:hover i
+        opacity 1
+
+    & i
+      position absolute
+      top 16px
+      right 10px
+      opacity 0.6
+
+p.description
+  padding 0 15px
+
+.btn-back
+  float left
+
+.toggle-edit
+  float right
+  margin-top 6px
+
+.button-list
+  $clearfix()
+
+  & button
+    float right
