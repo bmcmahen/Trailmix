@@ -1686,7 +1686,7 @@ L.Map = L.Class.extend({
 	project: function (latlng, zoom) { // (LatLng[, Number]) -> Point
 		zoom = zoom === undefined ? this._zoom : zoom;
 		var toPoint =  this.options.crs.latLngToPoint(L.latLng(latlng), zoom);
-    return toPoint; 
+    return toPoint;
 	},
 
 	unproject: function (point, zoom) { // (Point[, Number]) -> LatLng
@@ -1702,7 +1702,7 @@ L.Map = L.Class.extend({
 	latLngToLayerPoint: function (latlng) { // (LatLng)
 		var projectedPoint = this.project(L.latLng(latlng))._round();
 		var subtract = projectedPoint._subtract(this._initialTopLeftPoint);
-    return subtract; 
+    return subtract;
 	},
 
 	containerPointToLayerPoint: function (point) { // (Point)
@@ -5312,7 +5312,7 @@ L.CircleMarker = L.Circle.extend({
 	projectLatlngs: function () {
 		this._point = this._map.latLngToLayerPoint(this._latlng);
 	},
-	
+
 	_updateStyle : function () {
 		L.Circle.prototype._updateStyle.call(this);
 		this.setRadius(this.options.radius);
@@ -7054,7 +7054,8 @@ L.Handler.PolyEdit = L.Handler.extend({
 			marker._prev._middleRight = null;
 		}
 
-		this._poly.fire('edit');
+		console.log(marker);
+		this._poly.fire('edit', marker);
 	},
 
 	_updateIndexes: function (index, delta) {

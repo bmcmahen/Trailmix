@@ -22,7 +22,10 @@ Trailmix.behaviors.observeTrailFeatures = function(context) {
 						context.addFeature(newDoc);
 						context.delayFitBounds();
 					},
-					changed: function(newDoc, oldDoc) { console.log('update'); },
+					changed: function(newDoc, oldDoc) {
+						context.removeFeature(oldDoc);
+						context.addFeature(newDoc);
+					},
 					removed: function(oldDoc) { context.removeFeature(oldDoc); }
 				});
 			});
@@ -147,6 +150,79 @@ Trailmix.behaviors.displayMessage = function(message, context){
 		off: function(){
 			this.$el.removeClass('display-message');
 			this.$el.find('#message').remove();
+		}
+	};
+};
+
+Trailmix.behaviors.drawPolyline = function(context){
+	return {
+		on: function(){
+			this.draw = new L.Draw.Polyline(context.map, {
+				title: 'Draw a Line'
+			});
+
+			this.draw.on('activated', function(e){
+				console.log('drawing controls activated');
+			}).enable();
+
+			context.map
+				.on('draw:created', function(e){
+					console.log('draw created');
+					Session.set('promptInput', null);
+				})
+				.on('draw:edited', function(){
+					console.log('draw edited');
+				})
+				.on('draw:deleted', function(){
+					console.log('draw deleted');
+				})
+				.on('draw:drawstart', function(){
+					console.log('draw start');
+				})
+				.on('draw:drawstop', function(){
+					console.log('draw stop');
+				});
+		},
+		off: function(){
+			context.map
+				.off('draw:created')
+				.off('draw:edited')
+				.off('draw:deleted');
+			this.draw.disable();
+			delete this.draw;
+		}
+	};
+};
+
+Trailmix.behaviors.editFeature = function(context){
+	return {
+		on : function(){
+			var feature = this.feature = context.idToFeatures[Session.get('editingFeature')];
+			if (feature.type === 'LineString'){
+				feature.el.editing.enable();
+				feature.el.on('edit',  this.onEdit);
+			}
+		},
+		off : function(){
+			this.feature.el.editing.disable();
+			this.feature.el.off('edit');
+			delete this.feature;
+		},
+		onEdit: function(e){
+			console.log(e);
+			if (e._index) {
+				console.log('Clicked on:', e._index);
+				if (Session.get('sliceMode')){
+					// Prompt user to select a first point.
+					// Prompt user to select a last point.
+					//
+					// WITH THIS RANGE, WE CAN PROMPT TO:
+					// (1) Choose to delete these coords entirely (delete)
+					// (2) Choose to create a new trail from these coords (return)
+					// (3) Cancel the selection (escape)
+				}
+			}
+			// Session.set('promptInput', null);
 		}
 	};
 };

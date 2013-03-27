@@ -23,7 +23,7 @@
     this.type = doc.geometry.type;
     this.coords = doc.geometry.coordinates;
     if (doc.properties){
-      this.markerSymbol = doc.properties.markerSymbol;
+      this.markerSymbol = doc.properties.sym;
       this.markerSize = doc.properties.markerSize;
       this.name = doc.properties.name;
     }
@@ -52,7 +52,6 @@
 
     // Create our Marker
     createMarker: function(){
-      console.log('create marker');
       return L.marker(this.coords, {
           icon: this.determineIcon(),
           riseOnHover: true
@@ -89,6 +88,18 @@
             shadowAnchor: [15, 40],
             iconAnchor: [15, 40]
           }, iconProperties);
+          break;
+        case 'parking' :
+          iconProperties = _.defaults({
+            iconUrl: '/images/icons/parking-24.png',
+            iconSize: [24, 24]
+          });
+          break;
+        case 'triangle-stroked' :
+          iconProperties = _.defaults({
+            iconUrl: '/images/icons/triangle-stroked-24.png',
+            iconSize: [24, 24]
+          });
           break;
       }
       return L.icon(iconProperties);

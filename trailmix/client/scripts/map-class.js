@@ -5,8 +5,8 @@ Trailmix.MapView = (function(){
     this.map = new L.Map('map', {
       center: new L.LatLng(53.1103, -119.1567),
       zoom: 10,
-      layers: new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
-      // layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png'),
+      // layers: new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+      layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png'),
       maxZoom: 15,
       attributionControl: false
     });
@@ -17,7 +17,9 @@ Trailmix.MapView = (function(){
     this.modes = {
       detail : new Trailmix.modes.Detail(this),
       browse : new Trailmix.modes.Browse(this),
-      selectTrailhead: new Trailmix.modes.SelectTrailhead(this)
+      selectTrailhead: new Trailmix.modes.SelectTrailhead(this),
+      drawPolyline: new Trailmix.modes.DrawPolyline(this),
+      editFeature: new Trailmix.modes.EditFeature(this)
     };
     this.determineMapMode().promptInput();
 
@@ -95,8 +97,9 @@ Trailmix.MapView = (function(){
       var feature = this.idToFeatures[doc._id];
       if (feature) {
         if (Session.equals('mapView', 'browse')) {
-          this.markers.addLayer(el);
+          this.markers.removeLayer(feature.el);
         } else {
+          console.log('feature', feature);
           this.features.removeLayer(feature.el);
         }
         delete this.idToFeatures[doc._id];
@@ -142,43 +145,10 @@ Trailmix.MapView = (function(){
       return this;
     },
 
-    // XXX also allow adding a marker
-    addDrawingControls: function(){
-      // Enable Polyline Drawing
-      this.draw = new L.Polyline.Draw(this.map, { title: 'Draw a line.' });
-      this.map
-        .on('draw:poly-created', _.bind(this.onFeatureCreated, this))
-        .on('drawing', function(){
-          console.log('drawing is happening');
-        });
-
-      this.draw
-        .on('activated', function(e){
-          console.log('drawing controls activated');
-        })
-        .enable();
-    },
-
     highlightFeature: function(id){
       var highlighted = this.currentlyHightlighted;
       if (highlighted) highlighted.disableHighlight();
       this.currentlyHightlighted = this.idToFeatures[id].highlight();
-    },
-
-    // Editing States
-    editFeature: function(doc) {
-      var el = this.idToFeatures[doc._id];
-
-      if (this.currentlyEditing)
-        this.currentlyEditing.disableEditing();
-
-      this.currentlyEditing = el;
-      el.enableEditing();
-    },
-
-    disableEditFeature: function(doc) {
-      this.idToFeatures[doc._id].disableEditing();
-      delete this.currentlyEditing;
     },
 
     onFeatureCreated: function(e){

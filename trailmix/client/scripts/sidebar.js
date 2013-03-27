@@ -194,11 +194,47 @@
     editingFeature: function(){
       return Features.findOne(Session.get('editingFeature'));
     },
+
     featureTypePoint: function(){
       if (Session.get('featureType'))
         return Session.equals('featureType', 'Point');
       var feature = Features.findOne(Session.get('editingFeature'));
       if (feature.geometry.type === 'Point') return true;
+    },
+
+    drawingFeature: function(){
+      if (Session.equals('promptInput', 'editFeature') || Session.equals('promptInput', 'drawPolyline')) {
+        return true;
+      }
+    },
+
+    icons: function(){
+      return [
+        { name: 'campsite' },
+        { name: 'circle' },
+        { name: 'circle-stroked' },
+        { name: 'marker' },
+        { name: 'parking' },
+        { name: 'square' },
+        { name: 'toilets' },
+        { name: 'triangle-stroked'}
+      ];
+    }
+  });
+
+  Template.iconList.helpers({
+    selectedIcon: function(){
+      var currentFeature = Features.findOne(Session.get('selectedFeature'));
+      var icon = currentFeature && currentFeature.properties.sym;
+      if (icon === this.name) return 'selected';
+    }
+  });
+
+  Template.iconList.events({
+    'click li': function(e, t){
+      Features.update({
+        _id: Session.get('selectedFeature')
+      }, { $set: { 'properties.sym' : this.name }});
     }
   });
 
@@ -222,6 +258,18 @@
       var target = e.currentTarget;
       var val = target.options[target.selectedIndex].value;
       Session.set('featureType', val);
+    },
+    'click .draw' : function(e, t){
+      if (Session.equals('promptInput', 'editFeature') || Session.equals('promptInput', 'drawPolyline')){
+        Session.set('promptInput', null);
+        return false;
+      }
+      if (this.geometry.coordinates) {
+        Session.set('promptInput', 'editFeature');
+      } else {
+        Session.set('promptInput', 'drawPolyline');
+      }
+      return false;
     }
   });
 

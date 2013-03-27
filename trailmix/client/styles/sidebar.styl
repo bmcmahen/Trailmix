@@ -205,3 +205,27 @@ p.description
 
   & button
     float right
+
+ul.icons
+  display block
+  float left
+  margin-bottom 15px !important
+  margin-top 5px !important
+  width 100%
+  $clearfix()
+
+  & li
+    float left
+    border none !important
+    line-height 10px
+    padding 0 4px
+
+    &:hover
+      background #eee
+
+    & img
+      padding 0 !important
+      margin 0
+
+  & li.selected
+    background #eee

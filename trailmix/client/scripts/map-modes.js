@@ -65,6 +65,30 @@
 		return mode;
 	};
 
+	Trailmix.modes.DrawPolyline = function(context){
+		var message = 'Draw a line.';
+		var mode = {
+			context: context,
+			behaviors: [
+				Trailmix.behaviors.displayMessage(message, context),
+				Trailmix.behaviors.drawPolyline(context)
+			]
+		};
+		_.extend(mode, modeFunctions);
+		return mode;
+	};
 
+	Trailmix.modes.EditFeature = function(context){
+		var message = 'Edit the line.';
+		var mode = {
+			context: context,
+			behaviors: [
+				Trailmix.behaviors.displayMessage(message, context),
+				Trailmix.behaviors.editFeature(context)
+			]
+		};
+		_.extend(mode, modeFunctions);
+		return mode;
+	};
 
 })();

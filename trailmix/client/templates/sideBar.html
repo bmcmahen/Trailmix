@@ -159,18 +159,30 @@
     {{#if featureTypePoint}}
     <button class='btn btn-green place'>Place Marker</button>
     {{else}}
-    <button class='btn btn-green draw'>Draw LineString</button>
+    <button class='btn btn-green draw'>
+      {{#if drawingFeature}}
+       Finish Drawing LineString
+      {{else}}
+        Draw LineString
+      {{/if}}
+      </button>
+    {{/if}}
+    {{#if featureTypePoint}}
+    <label> Icon
+      <ul class='icons'>
+        {{#each icons}}
+          {{>iconList}}
+        {{/each}}
+      </ul>
+    </label>
+    {{else}}
+      <p> linestring! </p>
     {{/if}}
     <label> Description
       <textarea class='description'>
         {{this.properties.description}}
       </textarea>
     </label>
-    {{#if featureTypePoint}}
-      <p> point! </p>
-    {{else}}
-      <p> linestring! </p>
-    {{/if}}
     <div class='button-list'>
       <button class='save btn btn-blue'>Save Changes</button>
       <button class='back btn'>Done</button>
@@ -178,6 +190,10 @@
   </form>
   <br>
   {{/with}}
+</template>
+
+<template name='iconList'>
+  <li class='{{selectedIcon}}'><img src='/images/icons/{{this.name}}-24.png'></li>
 </template>
 
 <template name='feature'>
