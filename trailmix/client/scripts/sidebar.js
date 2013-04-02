@@ -1,5 +1,19 @@
 (function(){
 
+  // Saving Timer
+  var saveTimer = function(){
+    var timer;
+    this.set = function(saveFormCB) {
+      timer = Meteor.setTimeout(function() {
+        saveFormCB();
+      }, 1000);
+    };
+    this.clear = function() {
+      Meteor.clearInterval(timer);
+    };
+    return this;
+  }();
+
   // SIDEBAR WRAPPER
   // Slides left or right to reveal detail/browse views.
   Template.sideBar.helpers({
@@ -13,19 +27,34 @@
 
   Template.sideBar.preserve(['#carousel-inner']);
 
-  // XXX Optimize - This code will run a bazillion times.
-  Template.sideBar.rendered = function(){
+  Template.sideBar.created = function(){
+    this.isFirstRender = true;
+  };
+
+  var calcCarousel = function(){
     this.$el = this.$el || $(this.firstNode).parent();
     var width = this.$el.width();
     Session.set('carouselItemWidth', width);
     Session.set('carouselTotalWidth', width * 2);
     Session.set('carouselItemHeight', this.$el.parent().height());
-    this.hasRendered = true;
 
     if (Session.equals('mapView', 'detail'))
       Session.set('carouselPosition', 0 - width);
     else
       Session.set('carouselPosition', 0);
+  };
+
+  // XXX Optimize - This code will run a bazillion times.
+  Template.sideBar.rendered = function(){
+    calcCarousel.call(this);
+    if (this.isFirstRender) {
+      $(window).on('resize', _.bind(calcCarousel, this));
+      this.isFirstRender = false;
+    }
+  };
+
+  Template.sideBar.destroyed = function(){
+    $(window).off('resize');
   };
 
   // BROWSE TRAILS
@@ -51,6 +80,17 @@
     }
   });
 
+  Template.browseTrailList.helpers({
+    selected : function(){
+      if (Session.equals('currentTrail', this._id) && Session.equals('mapView', 'detail'))
+        return 'selected';
+    },
+    hover: function(){
+      if (Session.equals('hoveredTrail', this._id))
+        return 'hover';
+    }
+  });
+
   // TRAIL DETAIL
   Template.detailView.events({
     'click .toggle-edit' : function(){
@@ -62,7 +102,7 @@
       else Session.set('isEditing', true);
       return false;
     },
-    'click .btn-back': function(){
+    'click .back': function(){
       Session.set('mapView', 'browse');
       return false;
     }
@@ -108,25 +148,43 @@
     isEditing: function(){ return Session.get('isEditing'); }
   });
 
+  var descriptionTabUpdate = function(){
+    saveTimer.clear();
+    var name = $('.trail-name').val()
+      , desc = $('#trail-description').val();
+    Trails.update({_id: Session.get('currentTrail')}, {'$set': {
+      name : name,
+      description : desc
+    }});
+    Session.set('saveStatus', 'All Changes Saved');
+  };
+
   Template.descriptionTab.events({
     // Update trail name & description
     'submit #trail-metadata' : function(e, t) {
       e.preventDefault();
-      var name = t.find('.trail-name').value,
-          desc = t.find('#trail-description').value;
-
-      Trails.update({_id: this._id}, {'$set' : {
-        name: name,
-        description: desc
-      }});
-      Session.set('isEditing', null);
+      descriptionTabUpdate();
       return false;
     },
     // Set our trail origin
     'click .trailorigin' : function(e, t){
       Session.set('promptInput', 'selectTrailhead');
+    },
+
+    'keyup input, keyup textarea' : function(e, t){
+      saveTimer.clear();
+      Session.set('saveStatus', 'Saving...');
+      saveTimer.set(function(){  descriptionTabUpdate(); });
+    },
+
+    'blur input, blur textarea' : function(e, t){
+      descriptionTabUpdate();
     }
   });
+
+  Template.descriptionTab.destroyed = function(){
+    Session.set('saveStatus', undefined);
+  };
 
   // FEATURES TAB
   Template.featuresTab.helpers({
@@ -138,6 +196,13 @@
       return currentTrail && Features.find({ trail : currentTrail });
     }
   });
+
+  var Dropdown = require('bmcmahen-dropdown');
+
+  Template.featuresTab.rendered = function(){
+    this.dropdown = Dropdown('.dropdown-toggle');
+    console.log(this.dropdown);
+  };
 
   // Take an array of features & insert them into the DB.
   var createFeatures = function(json){
@@ -165,12 +230,36 @@
     reader.readAsText(files[0]);
   };
 
+  var insertFeature = function(type){
+    var feature = {
+        type: 'Feature',
+        geometry: {
+          coordinates: [],
+          type: type
+        },
+        properties: {}
+      };
+      feature.trail = Session.get('currentTrail');
+      var id = Features.insert(feature);
+      Session.set('selectedFeature', id);
+      Session.set('editingFeature', id);
+  };
+
   Template.featuresTab.events({
     'click .upload': function(){
       $('#upload-field').trigger('click');
     },
     'change #upload-field': function(){
       parseGPXFiles(e.currentTarget.files);
+    },
+    'click .new-marker': function(){
+      insertFeature('Point');
+    },
+    'click .new-linestring': function(){
+      insertFeature('LineString');
+    },
+    'click .new-from-gpx': function(){
+      $('#upload-field').trigger('click');
     }
   });
 
@@ -217,10 +306,17 @@
         { name: 'parking' },
         { name: 'square' },
         { name: 'toilets' },
-        { name: 'triangle-stroked'}
+        { name: 'triangle-stroked'},
+        { name: 'triangle'}
       ];
+    },
+
+    saveStatus: function(){
+      return Session.get('saveStatus');
     }
   });
+
+  Template.editingFeature.preserve(['#name', '#description']);
 
   Template.iconList.helpers({
     selectedIcon: function(){
@@ -238,43 +334,66 @@
     }
   });
 
+  var featureUpdate = function(){
+    saveTimer.clear();
+    var name = $('#name').val()
+      , desc = $('#description').val();
+
+    Features.update({_id: this._id}, {'$set': {
+      'properties.name' : name,
+      'properties.description': desc
+    }});
+    Session.set('saveStatus', 'All Changes Saved');
+  };
+
   Template.editingFeature.events({
     'submit #feature-form' : function(e, t){
-      var name = t.find('.name').value
-        , desc = t.find('.description').value;
-
-      Features.update({_id: this._id}, {'$set' : {
-        'properties.name' : name,
-        'properties.description' : desc
-      }});
-
+      e.preventDefault();
+      featureUpdate.call(this);
       Session.set('editingFeature', null);
+      return false;
     },
     'click .back': function(e, t){
       Session.set('editingFeature', null);
       return false;
-    },
-    'change select' : function(e, t){
-      var target = e.currentTarget;
-      var val = target.options[target.selectedIndex].value;
-      Session.set('featureType', val);
     },
     'click .draw' : function(e, t){
       if (Session.equals('promptInput', 'editFeature') || Session.equals('promptInput', 'drawPolyline')){
         Session.set('promptInput', null);
         return false;
       }
-      if (this.geometry.coordinates) {
+      if (this.geometry.coordinates.length > 0) {
         Session.set('promptInput', 'editFeature');
       } else {
         Session.set('promptInput', 'drawPolyline');
       }
       return false;
+    },
+    'keyup #name, keyup #description' : function(){
+      var self = this;
+      saveTimer.clear();
+      Session.set('saveStatus', 'Saving...');
+      saveTimer.set(function(){ featureUpdate.call(self); });
+    },
+    'blur #name, blur #description' : function(){
+      saveTimer.clear();
+      featureUpdate.call(this);
     }
   });
 
   Template.editingFeature.created = function(){
     Session.set('featureType', null);
   };
+
+  Template.editingFeature.destroyed = function(){
+    Session.set('saveStatus', undefined);
+  };
+
+  //SAVED?
+  Template.saved.helpers({
+    saved: function(){
+      return Session.get('saveStatus');
+    }
+  });
 
 })();

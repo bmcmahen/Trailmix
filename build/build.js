@@ -69,6 +69,7 @@ require.aliases = {};
  */
 
 require.resolve = function(path) {
+  if (path.charAt(0) === '/') path = path.slice(1);
   var index = path + '/index.js';
 
   var paths = [
@@ -181,17 +182,18 @@ require.relative = function(parent) {
    */
 
   localRequire.resolve = function(path) {
+    var c = path.charAt(0);
+    if ('/' == c) return path.slice(1);
+    if ('.' == c) return require.normalize(p, path);
+
     // resolve deps by returning
     // the dep in the nearest "deps"
     // directory
-    if ('.' != path.charAt(0)) {
-      var segs = parent.split('/');
-      var i = lastIndexOf(segs, 'deps') + 1;
-      if (!i) i = 0;
-      path = segs.slice(0, i + 1).join('/') + '/deps/' + path;
-      return path;
-    }
-    return require.normalize(p, path);
+    var segs = parent.split('/');
+    var i = lastIndexOf(segs, 'deps') + 1;
+    if (!i) i = 0;
+    path = segs.slice(0, i + 1).join('/') + '/deps/' + path;
+    return path;
   };
 
   /**
@@ -425,6 +427,131 @@ Modal.prototype.remove = function(){
 };
 
 });
+require.register("bmcmahen-dropdown/index.js", function(exports, require, module){
+/**
+ * 
+ * Super simple vanilla JS dropdown menu
+ * inspired by Bootstrap, uikit.
+ * 
+ */
+
+// XXX need way of closing other opened menus when
+// clicking new menu. 
+
+
+// API (not much of one, yet...)
+// return the dropdown menu object, and automatically setup event handler
+module.exports = function(selector){
+	return new Dropdown(document.querySelector(selector))._toggleClick();
+}
+
+// Keep track of opened dropdown so that we can close it
+// if another dropdown trigger is clicked.
+var openDropdown = null;
+
+// Constructor
+var Dropdown = function(element){
+	this.element = element; 
+	this.parent = element.parentNode; 
+	this.list = this.parent.querySelector('.dropdown-menu');
+	this.isShown = false; 
+}
+
+// Functions
+Dropdown.prototype = {
+
+	// Either show or hide, depending on currentState
+	toggle: function(){
+		this.isShown ? this.hide() : this.show(); 
+	},
+
+	// Hide the element, and remove window event listener
+	hide: function(){
+		var self = this
+			, parent = self.parent
+			, list = self.list; 
+
+		if (!this.isShown)
+			return
+
+		openDropdown = null; 
+		self._removeEvents(); 
+
+		self.isShown = false; 
+		parent.className = parent.className.replace( /(?:^|\s)open(?!\S)/g , '' )
+		list.setAttribute('aria-hidden', true);	
+
+		return this; 
+	},
+
+	// Show element, and add window event listener
+	show: function(){
+		var self = this
+			, parent = self.parent
+			, list = self.list; 
+
+		if (openDropdown)
+			openDropdown.hide(); 
+
+		openDropdown = self; 
+		self._addEvents(); 
+
+		if (self.isShown)
+			return
+
+		self.isShown = true; 
+
+		parent.className += ' open';
+		list.setAttribute('aria-hidden', false);
+		var toFocus = list.querySelector('[tabindex = "-1"]');
+		if (toFocus)
+			toFocus.focus(); 
+
+		return this; 
+	},
+
+	// Primary event handler for clicking trigger element
+	_toggleClick: function(){
+		var self = this
+			, el = self.element; 
+
+		el.onclick = function(e){
+			self.toggle();
+			e.stopPropagation(); 
+			e.preventDefault(); 
+			return false; 
+		}
+
+		return this; 
+	},
+
+	// Add event handler for clicking on the window, to close dropdown.
+	_addEvents: function(){
+		var self = this;
+		self.htmlEvent = document.querySelector('html');
+		self.htmlEvent.onclick = function(){
+			self.hide(); 
+		};
+
+		window.onkeyup = function(e){
+			if (e.which === 27) { //esc
+				self.hide(); 
+				self.element.focus(); 
+			}
+		};
+
+	},
+
+	// Remove the window event handler, so it doesnt keep firing
+	// when the dropdown isnt shown. XXX potential conflict here?
+	_removeEvents: function(){
+		this.htmlEvent.onclick = null; 
+		window.onkeyup = null;
+	}
+}
+});
 require.alias("bmcmahen-modal/index.js", "undefined/deps/modal/index.js");
 require.alias("component-emitter/index.js", "bmcmahen-modal/deps/emitter/index.js");
+
+require.alias("bmcmahen-dropdown/index.js", "undefined/deps/dropdown/index.js");
 

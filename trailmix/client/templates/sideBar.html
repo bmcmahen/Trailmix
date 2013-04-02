@@ -25,7 +25,7 @@
 </template>
 
 <template name='browseTrailList'>
-  <li>
+  <li class='{{hover}} {{selected}}'>
     <a href='#'> {{name}} </a>
     <i class='icon icon-chevron-right'></i>
   </li>
@@ -34,12 +34,12 @@
 <template name='detailView'>
   <div class='sidebar-navigation'>
     {{#unless isEditing}}
-    <a class='btn-back' href='#'> Browse Trails</a>
+    <button class='btn back' href='#'><i class='icon-arrow-left'></i> Browse Trails</button>
     {{/unless}}
     {{#if isEditing}}
-    <a class='btn toggle-edit btn-blue' href='#'> Done </a>
+    <button class='btn toggle-edit btn-blue' href='#'> Done </button>
     {{else}}
-    <a class='btn toggle-edit' href='#'> Edit </a>
+    <button class='btn toggle-edit' href='#'> Edit </button>
     {{/if}}
   </div>
   {{#isolate}}
@@ -81,25 +81,19 @@
       {{#if isEditing}}
       <form id='trail-metadata'>
         <label> Name
-          <input type='text' class='trail-name large' value='{{this.name}}'>
+          <input name='name' type='text' class='trail-name large' value='{{this.name}}'>
         </label>
         <div class='trailhead'>
-          <button class='btn trailorigin'>
-            <i class='icon icon-screenshot'></i>
+          <a class='btn trailorigin'>
+            <i class='icon-left icon-screenshot'></i>
             Select Trailhead
-          </button>
-          {{#if this.coordinates}}
-            <span> Lat: {{this.coordinates.[0]}} </span>
-            <span> Lng: {{this.coordinates.[1]}} </span>
-          {{/if}}
+          </a>
         </div>
         <label> Description
-          <textarea id='trail-description' class='trail-description'>{{#if this.description}}{{this.description}}{{/if}}</textarea>
+          <textarea name='description' id='trail-description' class='trail-description'>{{#if this.description}}{{this.description}}{{/if}}</textarea>
         </label>
         {{>autoComplete}}
-        <div class='align-right'>
-          <input type='submit' class='btn btn-blue large' value='Save Changes'>
-        </div>
+        {{>saved}}
       </form>
       {{else}}
         <p class='description'> {{this.description}} </p>
@@ -107,6 +101,12 @@
       {{/with}}
     </div>
   </div>
+</template>
+
+<template name='saved'>
+  <p class='save-status'>
+    {{saved}}
+  </p>
 </template>
 
 <template name='autoComplete'>
@@ -126,8 +126,15 @@
     <div id='features'>
       {{#unless editingFeature}}
       <div class='add-new'>
-        <button class='btn upload'> Upload GPX </button>
-        <button class='btn btn-blue'> New Feature </button>
+        <div class='dropdown'>
+          <button class='btn btn-blue new-feature dropdown-toggle'> New Feature <i class='icon-caret-down icon-right'></i> </button>
+          <ul class='dropdown-menu' role='menu'>
+            <li><a class='new-marker' tabindex='-1' href='#'><i class='icon-circle'></i>Marker</a></li>
+            <li><a class='new-linestring' tabindex='-1' href='#'><i class='icon-resize-horizontal'></i>LineString</a></li>
+            <li class='divider'></li>
+            <li><a class='new-from-gpx' tabindex='-1' href='#'><i class='icon-paste'></i>Copy from GPX</a></li>
+          </ul>
+        </div>
         <input type='file' id='upload-field'>
       </div>
       <ul>
@@ -145,50 +152,47 @@
 
 <template name='editingFeature'>
   {{#with editingFeature}}
+  <div class='button-list'>
+      <button class='btn back'><i class='icon-arrow-left'></i>Feature List</button>
+      {{#isolate}}
+       <p> {{saveStatus}} </p>
+      {{/isolate}}
+    </div>
   <form id='feature-form'>
     <label> Feature Name
-      <input type='text' class='name' value='{{this.properties.name}}'>
-    </label> Feature Type
+      <input type='text' class='name' id='name' value='{{this.properties.name}}'>
+    </label>
     {{#isolate}}
-      <select>
-        <option value='Point' {{#if featureTypePoint}}selected{{/if}}> Point </option>
-        <option value='LineString' {{#unless featureTypePoint}}selected{{/unless}}> LineString </option>
-      </select>
-    {{/isolate}}
-    </label>
-    {{#if featureTypePoint}}
-    <button class='btn btn-green place'>Place Marker</button>
-    {{else}}
-    <button class='btn btn-green draw'>
-      {{#if drawingFeature}}
-       Finish Drawing LineString
+      {{#if featureTypePoint}}
+      <button class='btn btn-green place'>Place Marker</button>
       {{else}}
-        Draw LineString
+      <button class='btn btn-green draw'>
+        {{#if drawingFeature}}
+         Finish Drawing LineString
+        {{else}}
+          Draw LineString
+        {{/if}}
+        </button>
       {{/if}}
-      </button>
-    {{/if}}
-    {{#if featureTypePoint}}
-    <label> Icon
-      <ul class='icons'>
-        {{#each icons}}
-          {{>iconList}}
-        {{/each}}
-      </ul>
-    </label>
-    {{else}}
-      <p> linestring! </p>
-    {{/if}}
-    <label> Description
-      <textarea class='description'>
+    {{/isolate}}
+
+    {{#isolate}}
+      {{#if featureTypePoint}}
+      <label> Icon
+        <ul class='icons'>
+          {{#each icons}}
+            {{>iconList}}
+          {{/each}}
+        </ul>
+      </label>
+      {{/if}}
+    {{/isolate}}
+    <label> Feature Description
+      <textarea id='description' class='desc'>
         {{this.properties.description}}
       </textarea>
     </label>
-    <div class='button-list'>
-      <button class='save btn btn-blue'>Save Changes</button>
-      <button class='back btn'>Done</button>
-    </div>
   </form>
-  <br>
   {{/with}}
 </template>
 
@@ -199,8 +203,8 @@
 <template name='feature'>
   <li class='feature-instance {{#if selected}} selected {{/if}}'>
     <div class='type'>
-      {{#if this.properties.markerSymbol}}
-        <img id='{{this._id}}' src='/images/icons/{{properties.markerSymbol}}-24.png'>
+      {{#if this.properties.sym}}
+        <img id='{{this._id}}' src='/images/icons/{{properties.sym}}-24.png'>
       {{else}}
         <img id='{{this._id}}' src='/images/icons/marker-24.png'>
       {{/if}}
@@ -208,12 +212,8 @@
     <div class='name'>
       {{this.properties.name}}
     </div>
-    <a class='edit action' href='#'>
-      <img src='/images/icons/edit-icon.png'>
-    </a>
-    <a class='delete action' href='#'>
-      <img src='/images/icons/delete-icon.png'>
-    </a>
+    <a class='edit action' href='#'><i class='icon icon-edit'></i></a>
+    <a class='delete action' href='#'><i class='icon icon-trash'></i></a>
   </li>
 </template>
 

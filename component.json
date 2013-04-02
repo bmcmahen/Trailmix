@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "bmcmahen/modal": "*"
+    "bmcmahen/modal": "*",
+    "bmcmahen/dropdown": "*",
+    "bmcmahen/component-loading-animation": "*"
   }
 }

@@ -45,9 +45,6 @@
       color $white
       border-bottom 1px solid transparent
 
-      & i
-        opacity 1
-
       &:hover
         background $blue
 
@@ -78,6 +75,16 @@
       border 1px solid rgb(245, 245, 245)
       border-bottom none
       border-top none
+      color #333
+      text-decoration none
+      text-align center
+
+      & .icon
+        line-height 36px
+        font-size 20px
+
+      & .icon-edit
+        line-height 39px
 
       &:hover
         cursor default
@@ -114,6 +121,11 @@
     float right
     margin-top 10px
 
+#edit-tabs
+  position absolute
+  top 110px
+  width 100%
+
 #edit-tabs-content
   padding 0
 
@@ -128,7 +140,8 @@
   display none
 
 .trailhead
-  padding-top 10px
+  padding-top 20px
+  padding-bottom 8px
 
   & i
     margin-left -5px
@@ -157,7 +170,7 @@
   box-sizing border-box
   $clearfix()
 
-.browse-list
+ul.browse-list
   list-style none
   padding-left 0
   position: absolute
@@ -175,11 +188,30 @@
     font-weight 400
     position relative
 
+    &:hover
+      background rgb(240, 250, 255)
+
+    &.hover
+      background rgb(240, 250, 255)
+
+    &.selected
+      background #08c
+      color white
+      opacity 1
+
+      &:hover
+        background #08c
+
+      & a
+        color white
+        text-shadow 0 1px 1px rgba(0,0,0,0.2)
+
     & a
       display block
       padding 13px
       text-decoration none
       color #08c
+      text-shadow 0 1px 1px rgba(255,255,255,0.2)
 
       &:hover i
         opacity 1
@@ -198,12 +230,16 @@ p.description
 
 .toggle-edit
   float right
-  margin-top 6px
 
 .button-list
+  padding 10px 15px
+  padding-bottom 5px
+  height 55px
+  box-sizing border-box
+  border-bottom 1px solid rgb(245, 245, 245)
   $clearfix()
 
-  & button
+  & p
     float right
 
 ul.icons
@@ -229,3 +265,54 @@ ul.icons
 
   & li.selected
     background #eee
+
+a i.icon-left,
+button i.icon-left
+  margin-right 3px
+
+a i.icon-right,
+button i.icon-right
+  margin-left 3px
+
+#trail-metadata label i.icon-ok-circle
+  display none
+  font-size 14px
+
+label
+  position relative
+
+label.saved i
+  position absolute
+  display block !important
+  top 29px
+  right 7px
+
+#features .dropdown
+  width 175px
+  display inline-block
+
+#features .dropdown ul
+  border-radius 3px
+
+  & li
+    border none
+    padding 0
+
+    &.divider
+      margin 4px 0
+      padding 0
+
+#features .dropdown .dropdown-menu a
+  text-align left
+  padding 3px 7px
+  outline none
+
+  & i
+    margin-right 5px
+
+.icon-arrow-left
+  margin-right 6px
+
+#features button.place
+  margin-top 15px
+  margin-left 0px

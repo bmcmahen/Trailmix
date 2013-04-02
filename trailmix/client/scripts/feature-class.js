@@ -14,6 +14,9 @@
   // Either creates a 'BrowseFeature' or 'DetailFeature' depending
   // on our document type.
   var Feature = function(doc, options){
+    if (doc.geometry && doc.geometry.type && doc.geometry.coordinates.length < 1){
+      return false;
+    }
     if (doc.geometry) return new EditFeature(doc, options);
     else if (doc.coordinates) return new BrowseFeature(doc, options);
   };
@@ -27,6 +30,7 @@
       this.markerSize = doc.properties.markerSize;
       this.name = doc.properties.name;
     }
+    this.doc = doc;
 
     // Default Styles
     this.defaultLineStyle = {
@@ -38,19 +42,13 @@
 
     // Build our feature, depending on if it's a point
     // or linestring.
-    this.el = (function(){
-      if (this.type === 'Point')
-        return this.createMarker();
-      if (this.type === 'LineString')
-        return this.createPolyline();
-    }).call(this);
+    this.el = this.type === 'Point' ? this.createMarker() : this.createPolyline();
     this.el._id = doc._id;
   };
 
   // Feature Class Functions
   _.extend(EditFeature.prototype, {
 
-    // Create our Marker
     createMarker: function(){
       return L.marker(this.coords, {
           icon: this.determineIcon(),
@@ -72,7 +70,7 @@
       var iconProperties = {
         iconUrl: '/images/icons/circle-12.png',
         iconSize: [12, 12],
-        labelAnchor: [0, 8]
+        labelAnchor: [0, 3]
       };
 
       switch(this.markerSymbol){
@@ -92,62 +90,30 @@
         case 'parking' :
           iconProperties = _.defaults({
             iconUrl: '/images/icons/parking-24.png',
-            iconSize: [24, 24]
+            iconSize: [24, 24],
+            labelAnchor: [8, 4],
+            className: 'parking'
           });
           break;
         case 'triangle-stroked' :
           iconProperties = _.defaults({
             iconUrl: '/images/icons/triangle-stroked-24.png',
-            iconSize: [24, 24]
+            iconSize: [24, 24],
+            labelAnchor: [5, 4]
+          });
+          break;
+        case 'triangle' :
+          iconProperties = _.defaults({
+            iconUrl: '/images/icons/triangle-24.png',
+            iconSize: [24, 24],
+            labelAnchor: [5, 4]
           });
           break;
       }
       return L.icon(iconProperties);
     },
 
-    // EDITING
-    //
-    enableEditing: function(){
-      if (this.type === 'Point') {
-        this.el.dragging.enable();
-      } else if (this.type === 'LineString') {
-        this.mapClass.map.fitBounds(this.el.getBounds());
-        this.el.editing.enable();
-        this.el.on('edit', function(e){
-          //this returns the entire polyline that has been
-          //edited, which is fine for 'updates'. For certain
-          //forms of editing, we need to figure out which points
-          //are being clicked, to determine where to split certain
-          //lines.
-          console.log('hi', e)
-        });
-      }
-    },
-
-    disableEditing: function(){
-      if (this.type === 'Point') {
-        this.el.dragging.disable();
-      } else if (this.type === 'LineString') {
-        this.el.editing.disable();
-        this.el.off('edit');
-      }
-    },
-
-    // Take two points, and remove every point in between.
-    slicePolyline: function(){
-    },
-
-    // Take one point, and create two Polylines out of them.
-    splitPolyline: function(){
-
-    },
-
-    // Take two polylines (id) and join them. NOTE. This might
-    // be difficult and kinda useless. Polyline cannot overlap.
-    joinPolyline: function(){
-
-    },
-
+    // XXX - Convert these to behaviors
     // HIGHLIGHTING
     //
     highlight: function(){
@@ -207,6 +173,7 @@
     this.coords = doc.coordinates;
     this.markerSymbol = 'browse';
     this.el = this.createMarker();
+    this.el._id = doc._id;
     this.el.on('click', _.bind(this.onClick, this));
   };
 

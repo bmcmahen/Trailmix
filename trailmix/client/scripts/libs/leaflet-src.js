@@ -1075,7 +1075,11 @@ L.LatLngBounds = function (southWest, northEast) { // (LatLng, LatLng) or (LatLn
 L.LatLngBounds.prototype = {
 	// extend the bounds to contain the given point or bounds
 	extend: function (obj) { // (LatLng) or (LatLngBounds)
-		if (typeof obj[0] === 'number' || typeof obj[0] === 'string' || obj instanceof L.LatLng) {
+		if (typeof obj[0] === 'number'
+			|| typeof obj[0] === 'string'
+			|| obj instanceof L.LatLng
+			|| typeof obj.lat === 'number'
+			|| typeof obj.lat == 'string' ) {
 			obj = L.latLng(obj);
 		} else {
 			obj = L.latLngBounds(obj);
@@ -4898,7 +4902,6 @@ L.Polyline = L.Path.extend({
 		var bounds = new L.LatLngBounds(),
 		    latLngs = this.getLatLngs(),
 		    i, len;
-
 		for (i = 0, len = latLngs.length; i < len; i++) {
 			bounds.extend(latLngs[i]);
 		}
@@ -7054,7 +7057,6 @@ L.Handler.PolyEdit = L.Handler.extend({
 			marker._prev._middleRight = null;
 		}
 
-		console.log(marker);
 		this._poly.fire('edit', marker);
 	},
 

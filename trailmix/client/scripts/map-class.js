@@ -5,8 +5,8 @@ Trailmix.MapView = (function(){
     this.map = new L.Map('map', {
       center: new L.LatLng(53.1103, -119.1567),
       zoom: 10,
-      // layers: new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
-      layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png'),
+      layers: new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+      // layers: new L.TileLayer('http://a.tiles.mapbox.com/v3/bmcmahen.map-75dbjjhk/{z}/{x}/{y}.png'),
       maxZoom: 15,
       attributionControl: false
     });
@@ -79,6 +79,7 @@ Trailmix.MapView = (function(){
       if (!newFeature) return;
       var el = newFeature.el;
       this.idToFeatures[doc._id] = newFeature;
+      window.newFeature = el;
       if (Session.equals('mapView', 'browse')) {
         this.markers.addLayer(el);
         return this;
@@ -95,6 +96,7 @@ Trailmix.MapView = (function(){
     // better code reuse.
     removeFeature: function(doc){
       var feature = this.idToFeatures[doc._id];
+      console.log(feature);
       if (feature) {
         if (Session.equals('mapView', 'browse')) {
           this.markers.removeLayer(feature.el);
@@ -122,14 +124,18 @@ Trailmix.MapView = (function(){
     // Basic map functions
     fitBounds: function(){
       if (this.features) {
+        console.log('THIS FEATURES', this.features);
+        var bnds = this.features.getBounds();
+        console.log('bounds', bnds);
         this.map.fitBounds(this.features.getBounds());
-      } else {
-        var currentTrail = Trails.findOne(Session.get('currentTrail'));
-        if (currentTrail.coordinates){
-          this.map
-            .panTo(currentTrail.coordinates)
-            .setZoom(12);
-        }
+       // this.map.fitBounds(this.features.getBounds());
+      // } else {
+      //   var currentTrail = Trails.findOne(Session.get('currentTrail'));
+      //   if (currentTrail.coordinates){
+      //     this.map
+      //       .panTo(currentTrail.coordinates)
+      //       .setZoom(12);
+      //   }
       }
     },
 
@@ -148,7 +154,10 @@ Trailmix.MapView = (function(){
     highlightFeature: function(id){
       var highlighted = this.currentlyHightlighted;
       if (highlighted) highlighted.disableHighlight();
-      this.currentlyHightlighted = this.idToFeatures[id].highlight();
+      var feature = this.idToFeatures[id];
+      if (feature) {
+        this.currentlyHightlighted = feature.highlight();
+      }
     },
 
     onFeatureCreated: function(e){

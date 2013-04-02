@@ -19,12 +19,20 @@ Trailmix.behaviors.observeTrailFeatures = function(context) {
 				}
 				_this.handle = query.observe({
 					added: function(newDoc) {
-						context.addFeature(newDoc);
-						context.delayFitBounds();
+						console.log('NEWDOC', newDoc);
+
+						if (newDoc.geometry.type && newDoc.geometry.coordinates.length > 0){
+							context.addFeature(newDoc);
+							context.delayFitBounds();
+						}
 					},
 					changed: function(newDoc, oldDoc) {
-						context.removeFeature(oldDoc);
-						context.addFeature(newDoc);
+						console.log('changed!');
+						if (newDoc.geometry.type && newDoc.geometry.coordinates.length > 0){
+							console.log('changed, and adding', newDoc);
+							context.removeFeature(oldDoc);
+							context.addFeature(newDoc);
+						}
 					},
 					removed: function(oldDoc) { context.removeFeature(oldDoc); }
 				});
@@ -154,6 +162,33 @@ Trailmix.behaviors.displayMessage = function(message, context){
 	};
 };
 
+// XXX Eventually handle clusters, and highlight multiple
+// list items in a cluster?
+Trailmix.behaviors.highlightFeatureOnHover = function(context){
+	return {
+		on: function(){
+			var _this = this;
+			context.markers.on('layeradd', function(e){
+				e.layer.on('mouseover', _this.onHover);
+				e.layer.on('mouseout', _this.onExit);
+			});
+			context.markers.on('layerremove', function(e){
+				e.layer.off('mouseover', _this.onHover);
+				e.layer.off('mouseover', _this.onExit);
+			});
+		},
+		off: function(){
+			context.markers.off('layeradd');
+		},
+		onHover: function(e){
+			Session.set('hoveredTrail', e.layer._id);
+		},
+		onExit: function(e){
+			Session.set('hoveredTrail', null);
+		}
+	};
+};
+
 Trailmix.behaviors.drawPolyline = function(context){
 	return {
 		on: function(){
@@ -167,7 +202,14 @@ Trailmix.behaviors.drawPolyline = function(context){
 
 			context.map
 				.on('draw:created', function(e){
-					console.log('draw created');
+					// convert our latLngs to arrays
+
+					var coordinates = _.map(e.layer.getLatLngs(), function(coords){
+		  	    return [coords.lat, coords.lng];
+		  	  });
+
+					Features.update({ _id: Session.get('editingFeature') },
+						{'$set': { 'geometry.coordinates' : coordinates }});
 					Session.set('promptInput', null);
 				})
 				.on('draw:edited', function(){
@@ -180,7 +222,7 @@ Trailmix.behaviors.drawPolyline = function(context){
 					console.log('draw start');
 				})
 				.on('draw:drawstop', function(){
-					console.log('draw stop');
+					Session.set('promptInput', null);
 				});
 		},
 		off: function(){

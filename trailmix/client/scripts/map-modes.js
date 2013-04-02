@@ -31,6 +31,7 @@
 		var mode = {
 			context : context,
 			behaviors: [
+				Trailmix.behaviors.highlightFeatureOnHover(context),
 				Trailmix.behaviors.observeTrails(context),
 				Trailmix.behaviors.observeBoundsChanges(context)
 			]
