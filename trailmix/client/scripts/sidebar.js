@@ -60,7 +60,7 @@
   // BROWSE TRAILS
   Template.browseView.helpers({
     trail: function(){
-      var bounds = MapBounds.findOne();
+      var bounds = MapBounds.get();
       if (bounds){
         var sw = bounds.southWest
           , ne = bounds.northEast;

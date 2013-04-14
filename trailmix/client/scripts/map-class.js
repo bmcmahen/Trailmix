@@ -11,7 +11,7 @@ Trailmix.MapView = (function(){
       attributionControl: false
     });
     L.control.scale().addTo(this.map);
-    this.features = L.featureGroup().addTo(this.map);
+    this.addFeatureGroup();
     this.markers = new L.MarkerClusterGroup().addTo(this.map);
     this.idToFeatures = {};
     this.modes = {
@@ -37,12 +37,16 @@ Trailmix.MapView = (function(){
       behavior.off();
     },
 
+    addFeatureGroup: function(){
+      this.features = L.featureGroup();
+    },
+
     // Responds to Session.get('mapView') and either enters
     // detailMode or browseMode.
     determineMapMode: function(){
       var _this = this;
       if (this.determineMode) this.determineMode.stop();
-      this.determineMode = Meteor.autorun(function(){
+      this.determineMode = Deps.autorun(function(){
        var view = Session.get('mapView');
        var mode = _this.modes[view];
        if (_this.mode) _this.mode.exit();
@@ -56,7 +60,7 @@ Trailmix.MapView = (function(){
       var _this = this;
       if (this.promptUserInput) this.promptUserInput.stop();
 
-      this.promptUserInput = Meteor.autorun(function(){
+      this.promptUserInput = Deps.autorun(function(){
         var input = Session.get('promptInput');
 
         if (!input && _this.prompt) {
@@ -79,7 +83,6 @@ Trailmix.MapView = (function(){
       if (!newFeature) return;
       var el = newFeature.el;
       this.idToFeatures[doc._id] = newFeature;
-      window.newFeature = el;
       if (Session.equals('mapView', 'browse')) {
         this.markers.addLayer(el);
         return this;
@@ -96,7 +99,6 @@ Trailmix.MapView = (function(){
     // better code reuse.
     removeFeature: function(doc){
       var feature = this.idToFeatures[doc._id];
-      console.log(feature);
       if (feature) {
         if (Session.equals('mapView', 'browse')) {
           this.markers.removeLayer(feature.el);
@@ -124,18 +126,12 @@ Trailmix.MapView = (function(){
     // Basic map functions
     fitBounds: function(){
       if (this.features) {
-        console.log('THIS FEATURES', this.features);
         var bnds = this.features.getBounds();
-        console.log('bounds', bnds);
         this.map.fitBounds(this.features.getBounds());
-       // this.map.fitBounds(this.features.getBounds());
-      // } else {
-      //   var currentTrail = Trails.findOne(Session.get('currentTrail'));
-      //   if (currentTrail.coordinates){
-      //     this.map
-      //       .panTo(currentTrail.coordinates)
-      //       .setZoom(12);
-      //   }
+        var self = this;
+        Meteor.setTimeout(function(){
+          self.features.addTo(self.map);
+        }, 400);
       }
     },
 

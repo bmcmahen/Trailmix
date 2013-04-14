@@ -19,17 +19,13 @@ Trailmix.behaviors.observeTrailFeatures = function(context) {
 				}
 				_this.handle = query.observe({
 					added: function(newDoc) {
-						console.log('NEWDOC', newDoc);
-
 						if (newDoc.geometry.type && newDoc.geometry.coordinates.length > 0){
 							context.addFeature(newDoc);
 							context.delayFitBounds();
 						}
 					},
 					changed: function(newDoc, oldDoc) {
-						console.log('changed!');
 						if (newDoc.geometry.type && newDoc.geometry.coordinates.length > 0){
-							console.log('changed, and adding', newDoc);
 							context.removeFeature(oldDoc);
 							context.addFeature(newDoc);
 						}
@@ -43,6 +39,7 @@ Trailmix.behaviors.observeTrailFeatures = function(context) {
 			if (this.handle) {
 				this.handle.stop();
 				context.removeAllFeatures();
+				context.addFeatureGroup();
 			}
 		}
 	};
@@ -88,8 +85,7 @@ Trailmix.behaviors.observeBoundsChanges = function(context){
 						northEast: [ bounds._northEast.lat, bounds._northEast.lng ]
 					};
 
-			if (MapBounds.find().count() < 1) MapBounds.insert(boundObject);
-			else MapBounds.update({}, boundObject);
+			MapBounds.set(boundObject);
 			context.browseLocation = context.map.getCenter();
 			context.browseZoom = context.map.getZoom();
 		},
